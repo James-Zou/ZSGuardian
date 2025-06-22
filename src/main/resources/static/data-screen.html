@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ZSGuardian-AI赋能研发管理守护系统</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <script src="/js/common.js"></script>
+    <script src="/js/iframe-redirect.js"></script>
+    <link rel="stylesheet" href="/lib/element-ui.css">
+    <script src="/lib/echarts.min.js"></script>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            background: #0b1437; /* 添加基础背景色 */
+        }
+
+        .screen-container {
+            width: 100%;
+            height: 100%;
+            padding: 16px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background:
+                    linear-gradient(to right, rgba(15, 40, 92, 0.4) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(15, 40, 92, 0.4) 1px, transparent 1px),
+                    radial-gradient(circle at center, #142454 0%, #0b1437 100%);
+            background-size: 30px 30px, 30px 30px, 100% 100%;
+            background-attachment: fixed; /* 固定背景 */
+        }
+
+        /* 确保触摸滚动平滑 */
+        .screen-container::-webkit-scrollbar {
+            display: none; /* 隐藏滚动条 */
+        }
+
+        .screen-container::before {
+            content: '';
+            position: fixed; /* 改为fixed */
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                    radial-gradient(circle at 30% 30%, rgba(56, 182, 255, 0.1) 0%, transparent 50%),
+                    radial-gradient(circle at 70% 70%, rgba(120, 86, 255, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            animation: ambientLight 10s infinite alternate;
+            z-index: 0; /* 确保在底层 */
+        }
+        @keyframes ambientLight {
+            0% {
+                opacity: 0.5;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1.2);
+            }
+        }
+        .header {
+            position: relative;
+            height: 120px;
+            background: linear-gradient(90deg,
+            rgba(56, 182, 255, 0),
+            rgba(56, 182, 255, 0.1),
+            rgba(56, 182, 255, 0)
+            );
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .header::before, .header::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            width: 50%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(56, 182, 255, 0.8));
+        }
+        .header::before {
+            left: 0;
+        }
+        .header::after {
+            right: 0;
+            transform: rotateZ(180deg);
+        }
+        .header h1 {
+            font-size: 42px;
+            margin: 0;
+            padding: 20px 0;
+            background: linear-gradient(to right, #38b6ff, #7856ff);
+            -webkit-background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 15px rgba(56, 182, 255, 0.3);
+            letter-spacing: 4px;
+        }
+        .subtitle {
+            text-align: center;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .scroll-text {
+            display: inline-block;
+            font-size: 16px;
+            color: #38b6ff;
+            text-shadow: 0 0 10px rgba(56, 182, 255, 0.5);
+            animation: glow 2s ease-in-out infinite alternate;
+            position: relative;
+        }
+
+        .scroll-text::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(56, 182, 255, 0.4) 50%,
+            transparent 100%
+            );
+            animation: shine 3s infinite;
+        }
+
+        @keyframes glow {
+            from {
+                opacity: 0.8;
+            }
+            to {
+                opacity: 1;
+                text-shadow: 0 0 20px rgba(56, 182, 255, 0.8);
+            }
+        }
+
+        @keyframes shine {
+            0% {
+                transform: translateX(-100%);
+            }
+            100% {
+                transform: translateX(100%);
+            }
+        }
+        .data-summary {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            padding: 0 20px;
+            margin-bottom: 20px;
+        }
+        .summary-card {
+            position: relative;
+            background: rgba(20, 36, 84, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(56, 182, 255, 0.2);
+            box-shadow: 0 0 20px rgba(56, 182, 255, 0.1);
+            padding: 15px 10px;
+            text-align: center;
+        }
+        .summary-value {
+            font-size: 36px;
+            font-weight: bold;
+            margin: 10px 0;
+            background: linear-gradient(to right, #38b6ff, #7856ff);
+            -webkit-background-clip: text;
+            color: transparent;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .summary-label {
+            font-size: 14px;
+            color: #8f9bb3;
+        }
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            padding: 0 20px;
+            margin-bottom: 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .chart-card {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            box-sizing: border-box;
+        }
+        .chart-card::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            right: -1px;
+            bottom: -1px;
+            background: linear-gradient(45deg,
+            rgba(56, 182, 255, 0.1),
+            rgba(120, 86, 255, 0.1)
+            );
+            border-radius: 10px;
+            z-index: -1;
+        }
+        .chart-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 30%;
+            height: 1px;
+            background: linear-gradient(to right, transparent, #0092ff);
+        }
+        .chart-title {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #fff;
+            padding-left: 10px;
+            border-left: 4px solid #0092ff;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .loading-text {
+            color: #0092ff;
+            font-size: 24px;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+        @media screen and (max-width: 1200px) {
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+
+            .data-summary {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media screen and (max-width: 768px) {
+            .header {
+                height: 100px;
+                margin-bottom: 15px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+                padding: 10px 0;
+                letter-spacing: 2px;
+            }
+
+            .scroll-text {
+                font-size: 14px;
+            }
+
+            .data-summary {
+                display: flex;
+                overflow-x: auto;
+                gap: 10px;
+                padding: 0 10px;
+                margin: 10px 0;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none; /* Firefox */
+                -ms-overflow-style: none; /* IE and Edge */
+            }
+
+            .data-summary::-webkit-scrollbar {
+                display: none; /* Chrome, Safari and Opera */
+            }
+
+            .summary-card {
+                flex: 0 0 auto;
+                width: 85px; /* 固定宽度 */
+                padding: 8px 5px;
+                white-space: nowrap;
+            }
+
+            .summary-value {
+                font-size: 16px;
+                margin: 5px 0;
+            }
+
+            .summary-label {
+                font-size: 12px;
+                line-height: 1.2;
+            }
+
+            .screen-container {
+                padding: 10px;
+                width: 100%;
+                overflow-x: hidden;
+            }
+
+            .charts-container {
+                grid-template-columns: 1fr;
+                padding: 0 5px;
+                gap: 15px;
+                margin-bottom: 60px;
+                width: 100%;
+            }
+
+            .chart-card {
+                height: 300px;
+                padding: 10px;
+                margin: 0 auto; /* 居中显示 */
+                width: 100%;
+                min-width: unset; /* 移除最小宽度限制 */
+                max-width: 100%; /* 限制最大宽度 */
+            }
+
+            /* 确保图表容器不会溢出 */
+            #issueTypesChart,
+            #dailyTrendChart,
+            #repoDistributionChart,
+            #severityChart {
+                width: 100% !important;
+                height: 100% !important;
+            }
+
+            .chart-title {
+                font-size: 16px;
+                margin-bottom: 10px;
+            }
+        }
+
+        /* 小屏幕进一步优化 */
+        @media screen and (max-width: 375px) {
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .scroll-text {
+                font-size: 12px;
+            }
+
+            .data-summary {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-value {
+                font-size: 20px;
+            }
+
+            .chart-card {
+                height: 250px;
+            }
+
+            .charts-container {
+                padding: 0;
+            }
+        }
+        .title-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .subtitle {
+            margin-top: 10px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .marquee {
+            width: 100%;
+            white-space: nowrap;
+            animation: marquee 15s linear infinite;
+        }
+
+        .scroll-text {
+            display: inline-block;
+            font-size: 16px;
+            color: #38b6ff;
+            text-shadow: 0 0 10px rgba(56, 182, 255, 0.5);
+            padding-left: 100%;
+        }
+
+        @keyframes marquee {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(-100%);
+            }
+        }
+    </style>
+</head>
+<body>
+<div id="app" class="screen-container">
+    <div class="header">
+        <div class="title-container">
+            <h1>研发质量监管大屏</h1>
+            <div class="subtitle">
+                <div class="marquee">
+                    <span class="scroll-text">7×24，时刻守护代码质量</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="data-summary">
+        <div class="summary-card">
+            <div class="summary-value">{{ totalReviews }}</div>
+            <div class="summary-label">总审核次数</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-value">{{ totalIssues }}</div>
+            <div class="summary-label">发现问题总数</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-value">{{ avgIssuesPerReview }}</div>
+            <div class="summary-label">平均问题数</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-value">{{ recentTrend }}%</div>
+            <div class="summary-label">近期改善趋势</div>
+        </div>
+    </div>
+
+    <div class="charts-container">
+        <div class="chart-card">
+            <div class="chart-title">问题类型分布</div>
+            <div id="issueTypesChart" style="width: 100%; height: 90%;"></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">每日问题趋势</div>
+            <div id="dailyTrendChart" style="width: 100%; height: 90%;"></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">代码仓库问题分布</div>
+            <div id="repoDistributionChart" style="width: 100%; height: 90%;"></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">问题严重程度分布</div>
+            <div id="severityChart" style="width: 100%; height: 90%;"></div>
+        </div>
+    </div>
+</div>
+
+<script src="/lib/vue.min.js"></script>
+<script src="/lib/element-ui.min.js"></script>
+<script>
+    new Vue({
+        el: '#app',
+        data: {
+            charts: {},
+            loading: true,
+            totalReviews: 0,
+            totalIssues: 0,
+            avgIssuesPerReview: '0.00',
+            recentTrend: '0.0'
+        },
+        mounted() {
+            checkLogin().then(loggedIn => {
+                if (loggedIn) {
+                    this.initCharts();
+                    this.fetchData();
+                    setInterval(this.fetchData, 5 * 60 * 1000);
+                }
+            });
+        },
+        methods: {
+            initCharts() {
+                // 问题类型分布图
+                this.charts.issueTypes = echarts.init(document.getElementById('issueTypesChart'));
+                this.charts.issueTypes.setOption({
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: '{b}: {c} ({d}%)'
+                    },
+                    legend: {
+                        orient: 'vertical',
+                        right: 10,
+                        top: 'center',
+                        textStyle: {
+                            color: '#fff'
+                        }
+                    },
+                    series: [{
+                        type: 'pie',
+                        radius: ['50%', '70%'],
+                        avoidLabelOverlap: true,
+                        label: {
+                            show: false
+                        },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: '14',
+                                fontWeight: 'bold'
+                            }
+                        },
+                        data: []
+                    }]
+                });
+
+                // 每日问题趋势图
+                this.charts.dailyTrend = echarts.init(document.getElementById('dailyTrendChart'));
+                this.charts.dailyTrend.setOption({
+                    tooltip: {
+                        trigger: 'axis'
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        boundaryGap: false,
+                        axisLabel: {
+                            color: '#fff'
+                        },
+                        axisLine: {
+                            lineStyle: {
+                                color: '#fff'
+                            }
+                        }
+                    },
+                    yAxis: {
+                        type: 'value',
+                        axisLabel: {
+                            color: '#fff'
+                        },
+                        axisLine: {
+                            lineStyle: {
+                                color: '#fff'
+                            }
+                        },
+                        splitLine: {
+                            lineStyle: {
+                                color: 'rgba(255,255,255,0.1)'
+                            }
+                        }
+                    },
+                    series: [{
+                        type: 'line',
+                        smooth: true,
+                        data: [],
+                        areaStyle: {
+                            opacity: 0.1
+                        },
+                        itemStyle: {
+                            color: '#38b6ff'
+                        },
+                        lineStyle: {
+                            width: 2
+                        }
+                    }]
+                });
+
+                // 仓库分布图
+                this.charts.repoDistribution = echarts.init(document.getElementById('repoDistributionChart'));
+                this.charts.repoDistribution.setOption({
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: '{b}: {c} ({d}%)'
+                    },
+                    legend: {
+                        orient: 'vertical',
+                        right: 10,
+                        top: 'center',
+                        textStyle: {
+                            color: '#fff'
+                        }
+                    },
+                    series: [{
+                        type: 'pie',
+                        radius: ['50%', '70%'],
+                        avoidLabelOverlap: true,
+                        label: {
+                            show: false
+                        },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: '14',
+                                fontWeight: 'bold'
+                            }
+                        },
+                        data: []
+                    }]
+                });
+
+                // 问题严重程度分布图
+                this.charts.severity = echarts.init(document.getElementById('severityChart'));
+                this.charts.severity.setOption({
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: {
+                            type: 'shadow'
+                        }
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        axisLabel: {
+                            color: '#fff'
+                        },
+                        axisLine: {
+                            lineStyle: {
+                                color: '#fff'
+                            }
+                        }
+                    },
+                    yAxis: {
+                        type: 'value',
+                        axisLabel: {
+                            color: '#fff'
+                        },
+                        axisLine: {
+                            lineStyle: {
+                                color: '#fff'
+                            }
+                        },
+                        splitLine: {
+                            lineStyle: {
+                                color: 'rgba(255,255,255,0.1)'
+                            }
+                        }
+                    },
+                    series: [{
+                        type: 'bar',
+                        data: [],
+                        itemStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                {offset: 0, color: '#38b6ff'},
+                                {offset: 1, color: '#7856ff'}
+                            ])
+                        }
+                    }]
+                });
+            },
+
+            async fetchData() {
+                try {
+                    this.loading = true;
+                    const response = await fetch('/api/data-screen/statistics');
+                    const data = await response.json();
+
+                    // 更新统计数据
+                    this.totalReviews = data.totalReviews;
+                    this.totalIssues = data.totalIssues;
+                    this.avgIssuesPerReview = data.avgIssuesPerReview;
+                    this.recentTrend = data.recentTrend;
+
+                    // 更新图表数据
+                    this.charts.issueTypes.setOption({
+                        series: [{
+                            data: data.issueTypes
+                        }]
+                    });
+
+                    this.charts.dailyTrend.setOption({
+                        xAxis: {
+                            data: data.dailyTrend.dates
+                        },
+                        series: [{
+                            data: data.dailyTrend.counts
+                        }]
+                    });
+
+                    this.charts.repoDistribution.setOption({
+                        series: [{
+                            data: data.repoDistribution
+                        }]
+                    });
+
+                    this.charts.severity.setOption({
+                        xAxis: {
+                            data: data.severity.levels
+                        },
+                        series: [{
+                            data: data.severity.counts
+                        }]
+                    });
+                } catch (error) {
+                    console.error('Failed to fetch data:', error);
+                } finally {
+                    this.loading = false;
+                }
+            }
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ZSGuardian-AI赋能研发管理守护系统</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/lib/element-ui.css">
+    <style>
+        /* 复用登录页面的样式 */
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            display: flex;
+            width: 1000px;
+            height: 700px; /* 增加高度以适应更多表单项 */
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        /* 复用其他主题样式... */
+        .theme-section {
+            flex: 1;
+            background: linear-gradient(45deg, #2196F3, #00BCD4);
+            padding: 40px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .register-section {
+            width: 400px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .register-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .register-header h2 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .register-form {
+            width: 100%;
+        }
+
+        .form-item {
+            margin-bottom: 20px;
+        }
+
+        .register-button {
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .login-link a {
+            color: #409EFF;
+            text-decoration: none;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div class="container">
+        <div class="theme-section">
+            <div class="theme-content">
+                <h1>ZSGuardian</h1>
+                <p>AI 赋能,新一代研发管理智能平台</p>
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <i class="el-icon-magic-stick"></i>
+                        <span>测试管理-智能优化与高效执行</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="el-icon-coordinate"></i>
+                        <span>研发管理-严格把控代码质量</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="el-icon-monitor"></i>
+                        <span>变更管理-严谨评审与精准优化</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="el-icon-cpu"></i>
+                        <span>运维管理-智能监控与快速响应</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="register-section">
+            <div class="register-header">
+                <h2>用户注册</h2>
+                <p>加入我们的开发者社区</p>
+            </div>
+            <el-form
+                    ref="registerForm"
+                    :model="registerForm"
+                    :rules="rules"
+                    label-width="0px">
+                <el-form-item prop="username">
+                    <el-input
+                            v-model="registerForm.username"
+                            prefix-icon="el-icon-user"
+                            placeholder="用户名">
+                    </el-input>
+                </el-form-item>
+                <el-form-item prop="password">
+                    <el-input
+                            v-model="registerForm.password"
+                            prefix-icon="el-icon-lock"
+                            type="password"
+                            placeholder="密码">
+                    </el-input>
+                </el-form-item>
+                <el-form-item prop="confirmPassword">
+                    <el-input
+                            v-model="registerForm.confirmPassword"
+                            prefix-icon="el-icon-lock"
+                            type="password"
+                            placeholder="确认密码">
+                    </el-input>
+                </el-form-item>
+                <el-form-item prop="phone">
+                    <el-input
+                            v-model="registerForm.phone"
+                            prefix-icon="el-icon-phone"
+                            placeholder="手机号">
+                    </el-input>
+                </el-form-item>
+                <el-form-item prop="email">
+                    <el-input
+                            v-model="registerForm.email"
+                            prefix-icon="el-icon-message"
+                            placeholder="邮箱">
+                    </el-input>
+                </el-form-item>
+                <el-button
+                        type="primary"
+                        class="register-button"
+                        :loading="loading"
+                        @click="handleRegister">
+                    注册
+                </el-button>
+                <div class="login-link">
+                    已有账号？<a href="/login.html">立即登录</a>
+                </div>
+            </el-form>
+        </div>
+    </div>
+</div>
+
+<script src="/lib/vue.min.js"></script>
+<script src="/lib/element-ui.min.js"></script>
+<script src="/lib/crypto-js.min.js"></script>
+<script>
+    new Vue({
+        el: '#app',
+        data() {
+            // 密码确认验证
+            const validatePass2 = (rule, value, callback) => {
+                if (value !== this.registerForm.password) {
+                    callback(new Error('两次输入密码不一致!'));
+                } else {
+                    callback();
+                }
+            };
+
+            return {
+                registerForm: {
+                    username: '',
+                    password: '',
+                    confirmPassword: '',
+                    phone: '',
+                    email: ''
+                },
+                rules: {
+                    username: [
+                        { required: true, message: '请输入用户名', trigger: 'blur' },
+                        { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
+                    ],
+                    password: [
+                        { required: true, message: '请输入密码', trigger: 'blur' },
+                        { min: 6, message: '密码长度不能小于 6 个字符', trigger: 'blur' }
+                    ],
+                    confirmPassword: [
+                        { required: true, message: '请再次输入密码', trigger: 'blur' },
+                        { validator: validatePass2, trigger: 'blur' }
+                    ],
+                    phone: [
+                        { required: true, message: '请输入手机号', trigger: 'blur' },
+                        { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
+                    ],
+                    email: [
+                        { required: true, message: '请输入邮箱地址', trigger: 'blur' },
+                        { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
+                    ]
+                },
+                loading: false
+            }
+        },
+        methods: {
+            // 检查字段唯一性
+            async checkFieldUnique(field, value) {
+                try {
+                    const response = await fetch(`/api/check/${field}/${value}`);
+                    const result = await response.json();
+                    return result.available;
+                } catch (error) {
+                    console.error(`检查${field}失败:`, error);
+                    return false;
+                }
+            },
+
+            // 处理注册
+            async handleRegister() {
+                try {
+                    // 表单验证
+                    await this.$refs.registerForm.validate();
+                    
+                    // 唯一性校验
+                    const uniqueChecks = [
+                        {
+                            field: 'username',
+                            value: this.registerForm.username,
+                            message: '用户名已被使用'
+                        },
+                        {
+                            field: 'phone',
+                            value: this.registerForm.phone,
+                            message: '手机号已被注册'
+                        },
+                        {
+                            field: 'email',
+                            value: this.registerForm.email,
+                            message: '邮箱已被注册'
+                        }
+                    ];
+
+                    for (const check of uniqueChecks) {
+                        const isAvailable = await this.checkFieldUnique(check.field, check.value);
+                        if (!isAvailable) {
+                            this.$message.error(check.message);
+                            return;
+                        }
+                    }
+
+                    this.loading = true;
+                    const response = await fetch('/api/register', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            username: this.registerForm.username,
+                            password: CryptoJS.MD5(this.registerForm.password).toString(),
+                            phone: this.registerForm.phone,
+                            email: this.registerForm.email
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.message || '注册失败');
+                    }
+
+                    this.$message.success('注册成功！');
+                    setTimeout(() => {
+                        window.location.href = '/login.html';
+                    }, 1500);
+                } catch (error) {
+                    this.$message.error(error.message);
+                } finally {
+                    this.loading = false;
+                }
+            }
+        }
+    });
+</script>
+</body>
+</html> 

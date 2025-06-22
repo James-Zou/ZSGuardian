@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>ZSGuardian-AI赋能研发管理守护系统</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <script src="/js/common.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/lib/bootstrap.min.css" rel="stylesheet">
+    <link href="/lib/animate.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #00b140;
+            --primary-hover: #009935;
+            --primary-light: #e6f7ed;
+            --bg-color: #ffffff;
+            --text-color: #1f2937;
+            --border-color: #e5e7eb;
+            --card-bg: #ffffff;
+            --header-bg: #f0faf3;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            background: var(--header-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+        }
+
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary-color);
+            background-color: var(--primary-light);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .change-type {
+            margin-bottom: 20px;
+        }
+
+        .change-type label {
+            margin-right: 15px;
+        }
+
+        .form-control {
+            border-radius: 8px;
+            padding: 0.75rem;
+        }
+
+        .review-result {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="container">
+        <h2 class="mb-4">AI 变更评审</h2>
+        
+        <!-- 变更类型选择 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">变更类型</h5>
+            </div>
+            <div class="card-body">
+                <div class="change-type">
+                    <label>
+                        <input type="radio" name="changeType" value="code" checked> 代码变更
+                    </label>
+                    <label>
+                        <input type="radio" name="changeType" value="database"> 数据库变更
+                    </label>
+                    <label>
+                        <input type="radio" name="changeType" value="config"> 配置变更
+                    </label>
+                    <label>
+                        <input type="radio" name="changeType" value="architecture"> 架构变更
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- 变更内容输入 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">变更内容</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">变更标题</label>
+                    <input type="text" class="form-control" placeholder="请输入变更标题">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">变更描述</label>
+                    <textarea class="form-control" rows="4" placeholder="请详细描述变更内容"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">上传变更文档</label>
+                    <div class="upload-area">
+                        <i class="bi bi-cloud-upload"></i>
+                        <p class="mb-0">点击或拖拽文件到此处上传</p>
+                        <p class="text-muted small">支持 .doc, .docx, .pdf 格式</p>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="showDemoResult()">
+                    开始评审
+                </button>
+            </div>
+        </div>
+
+        <!-- 评审结果（默认隐藏） -->
+        <div id="reviewResult" class="card mb-4" style="display: none;">
+            <div class="card-header">
+                <h5 class="mb-0">评审结果</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-success">
+                    <h6>总体评估</h6>
+                    <p>变更风险等级：中等</p>
+                    <p>建议：在非高峰期进行变更，并准备回滚方案</p>
+                </div>
+                
+                <div class="mb-4">
+                    <h6>详细分析</h6>
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <span class="badge bg-success">通过</span>
+                            <strong>变更范围明确</strong>
+                            <p class="mb-0 text-muted">变更影响范围已清晰定义</p>
+                        </li>
+                        <li class="list-group-item">
+                            <span class="badge bg-warning">注意</span>
+                            <strong>潜在性能影响</strong>
+                            <p class="mb-0 text-muted">需要关注数据库索引变更对查询性能的影响</p>
+                        </li>
+                        <li class="list-group-item">
+                            <span class="badge bg-info">建议</span>
+                            <strong>测试建议</strong>
+                            <p class="mb-0 text-muted">建议进行完整的回归测试，特别是订单相关功能</p>
+                        </li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h6>风险防控建议</h6>
+                    <ol class="list-group list-group-numbered">
+                        <li class="list-group-item">准备详细的回滚方案</li>
+                        <li class="list-group-item">在测试环境完成充分验证</li>
+                        <li class="list-group-item">准备数据库备份</li>
+                        <li class="list-group-item">安排技术专家进行变更操作</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showDemoResult() {
+            document.getElementById('reviewResult').style.display = 'block';
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,349 @@
+/* 全局样式 */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f5f7fa;
+}
+
+/* 布局样式 */
+.el-container {
+    min-height: 100vh;
+}
+
+/* 头部样式 */
+.el-header {
+    background-color: #409EFF;
+    color: white;
+    padding: 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+}
+
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    height: 60px;
+    display: flex;
+    align-items: center;
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo i {
+    font-size: 28px;
+}
+
+/* 主要内容区样式 */
+.el-main {
+    padding: 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.main-card {
+    margin-bottom: 20px;
+}
+
+/* 上传区域样式 */
+.upload-section {
+    text-align: center;
+    padding: 20px;
+}
+
+.upload-section h2 {
+    color: #303133;
+    margin-bottom: 10px;
+}
+
+.description {
+    color: #909399;
+    margin-bottom: 30px;
+}
+
+.upload-area {
+    border: 2px dashed #dcdfe6;
+    border-radius: 6px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background-color: #fafafa;
+}
+
+.upload-area:hover {
+    border-color: #409EFF;
+    background-color: #f5f7fa;
+}
+
+.upload-area.is-uploading {
+    border-color: #409EFF;
+    background-color: #ecf5ff;
+}
+
+.upload-area i {
+    font-size: 48px;
+    color: #909399;
+    margin-bottom: 20px;
+}
+
+.upload-text {
+    font-size: 16px;
+    color: #606266;
+    margin-bottom: 10px;
+}
+
+.upload-tip {
+    font-size: 12px;
+    color: #909399;
+}
+
+/* 进度条样式 */
+.progress-section {
+    margin: 20px 0;
+    padding: 20px;
+    background-color: #f5f7fa;
+    border-radius: 4px;
+}
+
+/* 结果展示区样式 */
+.result-section {
+    margin-top: 40px;
+}
+
+.statistics {
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    text-align: center;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.stat-item i {
+    font-size: 36px;
+    color: #409EFF;
+}
+
+.stat-info {
+    text-align: left;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #303133;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: #909399;
+}
+
+.impact-section,
+.test-cases-section {
+    margin-top: 30px;
+}
+
+.impact-section h3,
+.test-cases-section h3 {
+    color: #303133;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.area-tag {
+    margin: 5px;
+}
+
+/* 页脚样式 */
+.el-footer {
+    background-color: #303133;
+    color: #909399;
+    text-align: center;
+    padding: 20px 0;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* 动画效果 */
+.fade-enter-active, .fade-leave-active {
+    transition: opacity 0.5s;
+}
+
+.fade-enter, .fade-leave-to {
+    opacity: 0;
+}
+
+.upload-container {
+    padding: 20px;
+}
+
+.parsing-progress {
+    margin: 20px 0;
+}
+
+.parse-result {
+    margin-top: 20px;
+}
+
+.basic-info {
+    margin-bottom: 20px;
+}
+
+.basic-info p {
+    margin: 8px 0;
+    color: #606266;
+}
+
+.impact-areas {
+    margin: 20px 0;
+}
+
+.impact-areas h4,
+.test-cases h4 {
+    margin-bottom: 10px;
+    color: #303133;
+}
+
+.test-cases {
+    margin-top: 20px;
+}
+
+.test-cases ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.test-cases li {
+    padding: 8px 0;
+    border-bottom: 1px solid #EBEEF5;
+}
+
+.test-cases li:last-child {
+    border-bottom: none;
+}
+
+.result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.ai-correction {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    border-left: 4px solid #409EFF;
+}
+
+.ai-correction-title {
+    font-weight: bold;
+    color: #409EFF;
+    margin-bottom: 10px;
+}
+
+/* 全屏 Loading 样式 */
+.fullscreen-loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.9);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.loading-content {
+    text-align: center;
+}
+
+.loading-content i {
+    font-size: 40px;
+    color: #409EFF;
+    margin-bottom: 10px;
+}
+
+.loading-content p {
+    font-size: 16px;
+    color: #606266;
+    margin: 10px 0;
+}
+
+/* AI 校正结果样式 */
+.ai-correction-container {
+    margin: 20px 0;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+.ai-success-alert {
+    margin-bottom: 20px;
+}
+
+.suggestion-section {
+    margin: 20px 0;
+}
+
+.suggestion-title {
+    color: #303133;
+    font-size: 18px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.suggestion-title i {
+    margin-right: 8px;
+    color: #409EFF;
+}
+
+.category-title {
+    color: #606266;
+    font-size: 16px;
+    margin: 15px 0 10px;
+    padding-left: 10px;
+    border-left: 3px solid #409EFF;
+}
+
+.suggestion-card {
+    margin: 10px 0;
+    transition: all 0.3s;
+}
+
+.suggestion-card:hover {
+    transform: translateY(-2px);
+}
+
+.download-section {
+    margin-top: 30px;
+    text-align: center;
+} 

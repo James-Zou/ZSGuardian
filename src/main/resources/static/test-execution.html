@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ZSGuardian-AI赋能研发管理守护系统</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/lib/element-ui.css">
+    <script src="/lib/vue.min.js"></script>
+    <script src="/lib/element-ui.min.js"></script>
+    <script src="/lib/axios.min.js"></script>
+    <script src="/js/common.js"></script>
+    <style>
+        .execution-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f0f2f5;
+            min-height: 100vh;
+        }
+
+        .header-card {
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        .progress-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 20px 0;
+        }
+
+        .case-card {
+            margin-bottom: 20px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .case-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .case-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .case-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #303133;
+        }
+
+        .case-content {
+            margin: 15px 0;
+        }
+
+        .case-section {
+            margin-bottom: 15px;
+        }
+
+        .section-title {
+            font-weight: 600;
+            color: #606266;
+            margin-bottom: 8px;
+        }
+
+        .section-content {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 4px;
+            color: #606266;
+        }
+
+        .result-input {
+            margin: 20px 0;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .status-tag {
+            margin-left: 10px;
+        }
+
+        .case-index {
+            color: #909399;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
+        /* 添加动画效果 */
+        .fade-enter-active, .fade-leave-active {
+            transition: opacity 0.5s;
+        }
+        .fade-enter, .fade-leave-to {
+            opacity: 0;
+        }
+
+        /* 结果面板样式 */
+        .result-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            width: 80%;
+            max-width: 600px;
+        }
+
+        .result-summary {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .result-statistics {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+
+        .statistic-item {
+            text-align: center;
+        }
+
+        .statistic-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .statistic-label {
+            color: #909399;
+        }
+
+        /* 遮罩层样式 */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="execution-container">
+        <!-- 头部信息卡片 -->
+        <el-card class="header-card">
+            <div class="case-header">
+                <div>
+                    <h2>测试执行 #{{executionPlan.id}}</h2>
+                    <p>{{executionPlan.title}}</p>
+                </div>
+                <el-button type="primary" @click="backToManagement">返回管理页面</el-button>
+            </div>
+            <div class="progress-info">
+                <el-progress 
+                    :percentage="progress" 
+                    :status="progressStatus">
+                </el-progress>
+                <span>{{currentIndex + 1}} / {{totalCases}}</span>
+            </div>
+        </el-card>
+
+        <!-- 测试用例执行卡片 -->
+        <transition name="fade">
+            <el-card v-if="currentCase" class="case-card">
+                <div class="case-header">
+                    <div>
+                        <span class="case-index">#{{currentIndex + 1}}</span>
+                        <span class="case-title">{{currentCase.title}}</span>
+                        <el-tag 
+                            class="status-tag"
+                            :type="getStatusType(currentCase.status)">
+                            {{currentCase.status}}
+                        </el-tag>
+                    </div>
+                    <el-tag :type="getPriorityType(currentCase.priority)">
+                        {{currentCase.priority}}
+                    </el-tag>
+                </div>
+
+                <div class="case-content">
+                    <!-- 前置条件 -->
+                    <div class="case-section" v-if="currentCase.precondition">
+                        <div class="section-title">前置条件</div>
+                        <div class="section-content">{{currentCase.precondition}}</div>
+                    </div>
+
+                    <!-- 测试步骤 -->
+                    <div class="case-section">
+                        <div class="section-title">测试步骤</div>
+                        <div class="section-content">{{currentCase.steps}}</div>
+                    </div>
+
+                    <!-- 预期结果 -->
+                    <div class="case-section">
+                        <div class="section-title">预期结果</div>
+                        <div class="section-content">{{currentCase.expectedResult}}</div>
+                    </div>
+
+                    <!-- 实际结果输入 -->
+                    <div class="result-input">
+                        <div class="section-title">实际结果</div>
+                        <el-input
+                            type="textarea"
+                            v-model="currentCase.actualResult"
+                            :rows="4"
+                            placeholder="请输入实际测试结果">
+                        </el-input>
+                    </div>
+
+                    <!-- 测试结果选择 -->
+                    <div class="result-input">
+                        <div class="section-title">测试结果</div>
+                        <el-radio-group v-model="currentCase.result">
+                            <el-radio label="PASS">通过</el-radio>
+                            <el-radio label="FAIL">失败</el-radio>
+                            <el-radio label="BLOCKED">阻塞</el-radio>
+                        </el-radio-group>
+                    </div>
+
+                    <!-- Bug描述（当结果为失败时显示） -->
+                    <div class="result-input" v-if="currentCase.result === 'FAIL'">
+                        <div class="section-title">Bug描述</div>
+                        <el-input
+                            type="textarea"
+                            v-model="currentCase.bugDescription"
+                            :rows="4"
+                            placeholder="请描述发现的Bug">
+                        </el-input>
+                    </div>
+                </div>
+
+                <!-- 导航按钮 -->
+                <div class="navigation-buttons">
+                    <el-button 
+                        @click="previousCase" 
+                        :disabled="currentIndex === 0">
+                        上一个
+                    </el-button>
+                    <el-button 
+                        type="primary" 
+                        @click="nextCase"
+                        :disabled="!isCurrentCaseValid">
+                        {{isLastCase ? '完成' : '下一个'}}
+                    </el-button>
+                </div>
+            </el-card>
+        </transition>
+
+        <!-- 结果面板 -->
+        <div v-if="showResult" class="overlay">
+            <div class="result-panel">
+                <h2 class="result-summary">测试执行完成</h2>
+                <div class="result-statistics">
+                    <div class="statistic-item">
+                        <div class="statistic-value">{{statistics.pass}}</div>
+                        <div class="statistic-label">通过</div>
+                    </div>
+                    <div class="statistic-item">
+                        <div class="statistic-value">{{statistics.fail}}</div>
+                        <div class="statistic-label">失败</div>
+                    </div>
+                    <div class="statistic-item">
+                        <div class="statistic-value">{{statistics.blocked}}</div>
+                        <div class="statistic-label">阻塞</div>
+                    </div>
+                </div>
+                <div style="text-align: center">
+                    <el-button type="primary" @click="finishExecution">
+                        确认完成
+                    </el-button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data() {
+                return {
+                    executionPlan: {
+                        id: null,
+                        title: '',
+                        status: 'IN_PROGRESS'
+                    },
+                    cases: [],
+                    currentIndex: 0,
+                    showResult: false,
+                    statistics: {
+                        pass: 0,
+                        fail: 0,
+                        blocked: 0
+                    }
+                }
+            },
+            computed: {
+                currentCase() {
+                    return this.cases[this.currentIndex];
+                },
+                totalCases() {
+                    return this.cases.length;
+                },
+                progress() {
+                    return Math.round((this.currentIndex / this.totalCases) * 100);
+                },
+                progressStatus() {
+                    if (this.progress === 100) return 'success';
+                    return '';
+                },
+                isLastCase() {
+                    return this.currentIndex === this.totalCases - 1;
+                },
+                isCurrentCaseValid() {
+                    const current = this.currentCase;
+                    if (!current) return false;
+                    if (!current.result) return false;
+                    if (!current.actualResult) return false;
+                    if (current.result === 'FAIL' && !current.bugDescription) return false;
+                    return true;
+                }
+            },
+            methods: {
+                async loadExecutionPlan() {
+                    try {
+                        const planId = new URLSearchParams(window.location.search).get('planId');
+                        const response = await axios.get(`/api/execution-plans/${planId}`);
+                        this.executionPlan = response.data;
+                        this.cases = response.data.cases;
+                    } catch (error) {
+                        this.$message.error('加载执行计划失败：' + error.message);
+                    }
+                },
+
+                getStatusType(status) {
+                    const types = {
+                        'PENDING': 'info',
+                        'IN_PROGRESS': 'warning',
+                        'COMPLETED': 'success',
+                        'PASS': 'success',
+                        'FAIL': 'danger',
+                        'BLOCKED': 'info'
+                    };
+                    return types[status] || 'info';
+                },
+
+                getPriorityType(priority) {
+                    const types = {
+                        'HIGH': 'danger',
+                        'MEDIUM': 'warning',
+                        'LOW': 'info'
+                    };
+                    return types[priority] || 'info';
+                },
+
+                async saveCurrentCase() {
+                    try {
+                        await axios.put(`/api/execution-plans/${this.executionPlan.id}/cases/${this.currentCase.id}`, {
+                            result: this.currentCase.result,
+                            actualResult: this.currentCase.actualResult,
+                            bugDescription: this.currentCase.bugDescription
+                        });
+                    } catch (error) {
+                        this.$message.error('保存测试结果失败：' + error.message);
+                        return false;
+                    }
+                    return true;
+                },
+
+                async nextCase() {
+                    if (!this.isCurrentCaseValid) {
+                        this.$message.warning('请完成当前用例的测试结果填写');
+                        return;
+                    }
+
+                    if (!await this.saveCurrentCase()) {
+                        return;
+                    }
+
+                    if (this.isLastCase) {
+                        this.calculateStatistics();
+                        this.showResult = true;
+                    } else {
+                        this.currentIndex++;
+                    }
+                },
+
+                previousCase() {
+                    if (this.currentIndex > 0) {
+                        this.currentIndex--;
+                    }
+                },
+
+                calculateStatistics() {
+                    this.statistics = this.cases.reduce((stats, testCase) => {
+                        if (testCase.result) {
+                            stats[testCase.result.toLowerCase()]++;
+                        }
+                        return stats;
+                    }, { pass: 0, fail: 0, blocked: 0 });
+                },
+
+                async finishExecution() {
+                    try {
+                        await axios.put(`/api/execution-plans/${this.executionPlan.id}/complete`, {
+                            statistics: this.statistics
+                        });
+                        this.$message.success('测试执行完成');
+                        this.backToManagement();
+                    } catch (error) {
+                        this.$message.error('完成测试执行失败：' + error.message);
+                    }
+                },
+
+                backToManagement() {
+                    window.location.href = '/test-case-management.html';
+                }
+            },
+            created() {
+                this.loadExecutionPlan();
+            }
+        });
+    </script>
+</body>
+</html> 

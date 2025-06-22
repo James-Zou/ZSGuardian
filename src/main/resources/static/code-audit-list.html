@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ZSGuardian-AI赋能研发管理守护系统</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <script src="/js/common.js"></script>
+    <link rel="stylesheet" href="/lib/element-ui.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7fa;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            margin-bottom: 60px;
+        }
+        .header {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+        }
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .search-section {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+        }
+        .table-section {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+        }
+        .footer {
+            text-align: center;
+            padding: 20px 0;
+            color: #666;
+            font-size: 14px;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.9);
+            border-top: 1px solid #eee;
+            z-index: 1000;
+        }
+        .footer-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        .footer-divider {
+            color: #ddd;
+        }
+        .operation-button {
+            color: #409EFF;
+            font-size: 14px;
+            padding: 0 10px;
+        }
+        
+        .operation-button:hover {
+            color: #66b1ff;
+        }
+        
+        @media screen and (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header, .search-section, .table-section {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="container">
+        <div class="header">
+            <div class="header-content">
+                <div class="title-section">
+                    <h2>代码审核记录</h2>
+                    <p>查看所有代码审核历史记录</p>
+                </div>
+                <div class="action-section">
+                    <el-button type="primary" @click="goBack">
+                        <i class="el-icon-back"></i>
+                        返回
+                    </el-button>
+                </div>
+            </div>
+        </div>
+
+        <div class="search-section">
+            <el-form :inline="true" :model="searchForm" class="demo-form-inline">
+               
+                <el-form-item label="审核时间">
+                    <el-date-picker
+                        v-model="searchForm.dateRange"
+                        type="daterange"
+                        range-separator="至"
+                        start-placeholder="开始日期"
+                        end-placeholder="结束日期">
+                    </el-date-picker>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="search">查询</el-button>
+                    <el-button @click="resetSearch">重置</el-button>
+                </el-form-item>
+            </el-form>
+        </div>
+
+        <div class="table-section">
+            <el-table
+                :data="tableData"
+                style="width: 100%"
+                v-loading="loading"
+                :header-cell-style="{background:'#f5f7fa'}"
+                :cell-style="tableCellStyle">
+                <el-table-column
+                    prop="repository"
+                    label="代码仓库"
+                    min-width="200"
+                    show-overflow-tooltip>
+                    <template slot-scope="scope">
+                        {{ getRepoName(scope.row.repository) }}
+                    </template>
+                </el-table-column>
+                <el-table-column
+                    prop="branch"
+                    label="分支"
+                    min-width="120"
+                    show-overflow-tooltip>
+                    <template slot-scope="scope">
+                        {{ getBranchName(scope.row.branch) }}
+                    </template>
+                </el-table-column>
+                <el-table-column
+                    prop="createdAt"
+                    label="审核时间"
+                    min-width="160"
+                    show-overflow-tooltip>
+                    <template slot-scope="scope">
+                        {{ formatDateTime(scope.row.createdAt) }}
+                    </template>
+                </el-table-column>
+                <el-table-column
+                    prop="totalIssues"
+                    label="问题数量"
+                    min-width="100"
+                    align="center">
+                    <template slot-scope="scope">
+                        {{ calculateTotalIssues(scope.row.reviewData) }}
+                    </template>
+                </el-table-column>
+                <el-table-column
+                    label="操作"
+                    min-width="120"
+                    align="center"
+                    fixed="right">
+                    <template slot-scope="scope">
+                        <el-button
+                            type="text"
+                            size="small"
+                            @click="goToDetail(scope.row.id)"
+                            class="operation-button">
+                            <i class="el-icon-view"></i> 查看详情
+                        </el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+            
+            <div style="margin-top: 20px">
+                <el-pagination
+                    @size-change="handleSizeChange"
+                    @current-change="handleCurrentChange"
+                    :current-page="pagination.currentPage"
+                    :page-sizes="[10, 20, 50, 100]"
+                    :page-size="pagination.pageSize"
+                    layout="total, sizes, prev, pager, next, jumper"
+                    :total="pagination.total">
+                </el-pagination>
+            </div>
+        </div>
+
+        <!-- 详情对话框 -->
+        <el-dialog
+            title="审核详情"
+            :visible.sync="detailDialogVisible"
+            width="70%">
+            <div v-if="currentDetail">
+                <el-descriptions :column="2" border>
+                  
+                    <el-descriptions-item label="审核时间">{{ currentDetail.auditTime }}</el-descriptions-item>
+                    <el-descriptions-item label="问题数量">{{ currentDetail.issueCount }}</el-descriptions-item>
+                    <el-descriptions-item label="状态">
+                        <el-tag :type="currentDetail.status === 'success' ? 'success' : 'danger'">
+                            {{ currentDetail.status === 'success' ? '通过' : '未通过' }}
+                        </el-tag>
+                    </el-descriptions-item>
+                </el-descriptions>
+                
+                <div style="margin-top: 20px">
+                    <h4>问题详情：</h4>
+                    <el-timeline>
+                        <el-timeline-item
+                            v-for="(issue, index) in currentDetail.issues"
+                            :key="index"
+                            :type="issue.type === 'error' ? 'danger' : 'warning'">
+                            <h4>{{ issue.title }}</h4>
+                            <p>{{ issue.description }}</p>
+                            <pre v-if="issue.code" style="background: #f5f7fa; padding: 10px; border-radius: 4px;">{{ issue.code }}</pre>
+                        </el-timeline-item>
+                    </el-timeline>
+                </div>
+            </div>
+        </el-dialog>
+    </div>
+
+    <div class="footer">
+        <div class="footer-content">
+            <span>风云无极工作室 © 2025</span>
+            <span class="footer-divider">|</span>
+            <span>用代码守护美好未来</span>
+        </div>
+    </div>
+
+    <script src="/lib/vue.min.js"></script>
+    <script src="/lib/element-ui.min.js"></script>
+    <script>
+        new Vue({
+            el: '#app',
+            data() {
+                return {
+                    searchForm: {
+                     
+                        dateRange: []
+                    },
+                    loading: false,
+                    tableData: [],
+                    pagination: {
+                        currentPage: 1,
+                        pageSize: 10,
+                        total: 0
+                    },
+                    detailDialogVisible: false,
+                    currentDetail: null
+                };
+            },
+            methods: {
+                goBack() {
+                    window.location.href = '/code-guardian.html';
+                },
+                search() {
+                    this.loadData();
+                },
+                resetSearch() {
+                    this.searchForm = {
+                     
+                        dateRange: []
+                    };
+                    this.loadData();
+                },
+                async loadData() {
+                    this.loading = true;
+                    try {
+                        const response = await fetch('/api/audit/list', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                              
+                                startDate: this.searchForm.dateRange[0],
+                                endDate: this.searchForm.dateRange[1],
+                                page: this.pagination.currentPage,
+                                pageSize: this.pagination.pageSize
+                            })
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error('获取数据失败');
+                        }
+                        
+                        const result = await response.json();
+                        this.tableData = result.data;
+                        this.pagination.total = result.total;
+                    } catch (error) {
+                        this.$message.error(error.message);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                handleSizeChange(val) {
+                    this.pagination.pageSize = val;
+                    this.loadData();
+                },
+                handleCurrentChange(val) {
+                    this.pagination.currentPage = val;
+                    this.loadData();
+                },
+                async viewDetail(row) {
+                    try {
+                        const response = await fetch(`/api/audit/detail/${row.id}`);
+                        if (!response.ok) {
+                            throw new Error('获取详情失败');
+                        }
+                        const result = await response.json();
+                        this.currentDetail = result;
+                        this.detailDialogVisible = true;
+                    } catch (error) {
+                        this.$message.error(error.message);
+                    }
+                },
+                getRepoName(repository) {
+                    if (!repository) return '';
+                    // 从完整URL中提取仓库名
+                    return repository.split('/').pop().replace('.git', '');
+                },
+                calculateTotalIssues(reviewData) {
+                    if (!reviewData) return 0;
+                    const data = typeof reviewData === 'string' ? JSON.parse(reviewData) : reviewData;
+                    return (data.criticalIssues || 0) + (data.majorIssues || 0) + (data.minorIssues || 0);
+                },
+                getStatusType(reviewData) {
+                    if (!reviewData) return 'success';
+                    const data = typeof reviewData === 'string' ? JSON.parse(reviewData) : reviewData;
+                    return this.calculateTotalIssues(data) > 0 ? 'danger' : 'success';
+                },
+                formatDateTime(datetime) {
+                    if (!datetime) return '';
+                    // 处理数组格式的时间
+                    if (Array.isArray(datetime)) {
+                        const [year, month, day, hour, minute, second] = datetime;
+                        return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')} ` +
+                               `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+                    }
+                    // 处理 ISO 格式的时间字符串
+                    try {
+                        const date = new Date(datetime);
+                        if (isNaN(date.getTime())) {
+                            throw new Error('Invalid date');
+                        }
+                        return date.getFullYear() + '-' +
+                            String(date.getMonth() + 1).padStart(2, '0') + '-' +
+                            String(date.getDate()).padStart(2, '0') + ' ' +
+                            String(date.getHours()).padStart(2, '0') + ':' +
+                            String(date.getMinutes()).padStart(2, '0') + ':' +
+                            String(date.getSeconds()).padStart(2, '0');
+                    } catch (e) {
+                        console.error('Date parsing error:', e);
+                        return '格式化错误';
+                    }
+                },
+                tableCellStyle({ row, column, rowIndex, columnIndex }) {
+                    return {
+                        'padding': '8px',
+                        'white-space': 'nowrap',
+                        'overflow': 'hidden',
+                        'text-overflow': 'ellipsis'
+                    };
+                },
+                getBranchName(branch) {
+                    if (!branch) return '';
+                    return branch.replace('refs/heads/', '');
+                },
+                goToDetail(id) {
+                    window.location.href = `/code-review-details/${id}`;
+                }
+            },
+            mounted() {
+                checkLogin().then(loggedIn => {
+                    if (loggedIn) {
+                        this.loadData();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html> 

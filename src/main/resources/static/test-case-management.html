@@ -1,0 +1,2997 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ZSGuardian-AI赋能研发管理守护系统</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    
+    <!-- 引入iframe重定向脚本 -->
+    <script src="/js/iframe-redirect.js"></script>
+    
+    <link rel="stylesheet" href="/lib/element-ui.css">
+    <script src="/lib/vue.min.js"></script>
+    <script src="/lib/element-ui.min.js"></script>
+    <script src="/lib/axios.min.js"></script>
+    <script src="/js/common.js"></script>
+    <style>
+        /* 整体布局样式 */
+        .management-container {
+            max-width: 100%;
+            margin: 0;
+            padding: 20px;
+            background: #f0f2f5;
+            min-height: 100vh;
+        }
+
+        /* 卡片样式优化 */
+        .el-card {
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px 0 rgba(0,0,0,.05);
+            transition: all 0.3s;
+        }
+
+        .el-card:hover {
+            box-shadow: 0 4px 20px 0 rgba(0,0,0,.08);
+        }
+
+        /* 头部样式 */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 0 10px;
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        /* 数据统计卡片 */
+        .statistics-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .statistic-card {
+            background: linear-gradient(135deg, #6B73FF 0%, #000DFF 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        /* 表格样式优化 */
+        .el-table {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .el-table th {
+            background-color: #f5f7fa !important;
+            color: #606266;
+            font-weight: 600;
+        }
+
+        /* 按钮样式优化 */
+        .action-button {
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: all 0.3s;
+        }
+
+        .action-button:hover {
+            transform: translateY(-2px);
+        }
+
+        /* 搜索框样式 */
+        .search-box {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 12px 0 rgba(0,0,0,.05);
+        }
+
+        /* 标签样式 */
+        .el-tag {
+            border-radius: 15px;
+            padding: 0 12px;
+        }
+
+        /* 分页样式 */
+        .pagination-container {
+            text-align: right;
+            margin-top: 20px;
+            padding: 10px 0;
+        }
+
+        /* 加载动画样式 */
+        .el-loading-spinner {
+            transform: scale(1.2);
+        }
+
+        /* 列表项过渡动画 */
+        .fade-transform-enter-active,
+        .fade-transform-leave-active {
+            transition: all .5s;
+        }
+
+        .fade-transform-enter,
+        .fade-transform-leave-active {
+            opacity: 0;
+            transform: translateX(20px);
+        }
+
+        /* 优化配色方案 */
+        :root {
+            --primary-color: #1890ff;
+            --success-color: #52c41a;
+            --warning-color: #faad14;
+            --danger-color: #ff4d4f;
+            --text-color: #2c3e50;
+            --border-color: #e8eaec;
+        }
+
+        /* 统计卡片渐变色优化 */
+        .statistic-card:nth-child(1) {
+            background: linear-gradient(135deg, #1890ff 0%, #36cfc9 100%);
+        }
+
+        .statistic-card:nth-child(2) {
+            background: linear-gradient(135deg, #722ed1 0%, #eb2f96 100%);
+        }
+
+        .statistic-card:nth-child(3) {
+            background: linear-gradient(135deg, #52c41a 0%, #13c2c2 100%);
+        }
+
+        .statistic-card:nth-child(4) {
+            background: linear-gradient(135deg, #fa8c16 0%, #fa541c 100%);
+        }
+
+        /* 添加卡片hover效果 */
+        .statistic-card {
+            transition: all 0.3s ease;
+        }
+
+        .statistic-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        /* 表格行hover效果 */
+        .el-table__row {
+            transition: all 0.3s ease;
+        }
+
+        .el-table__row:hover {
+            background-color: #f0f7ff !important;
+        }
+
+        /* 按钮动画效果 */
+        .el-button {
+            transition: all 0.3s ease;
+        }
+
+        .el-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 添加一些样式优化 */
+        .el-descriptions {
+            margin: 20px 0;
+        }
+
+        .el-descriptions-item__label {
+            background-color: #f5f7fa !important;
+            min-width: 120px;
+        }
+
+        .el-descriptions-item__content {
+            padding: 12px 15px !important;
+        }
+
+        /* 处理长文本的样式 */
+        .el-descriptions-item__content div {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        /* AI生成按钮样式 */
+        .ai-generate-button {
+            background: linear-gradient(45deg, #4CAF50, #2196F3) !important;
+            border: none !important;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease !important;
+        }
+        /* AI代码专家按钮样式 */
+        .ai-generate-code-button {
+            background: linear-gradient(45deg, #af4c68, #2196F3) !important;
+            border: none !important;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease !important;
+        }
+
+        .ai-generate-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+            background: linear-gradient(45deg, #2196F3, #4CAF50) !important;
+        }
+
+        .ai-generate-button:active {
+            transform: translateY(1px);
+        }
+
+        .ai-generate-button i {
+            margin-right: 5px;
+            animation: sparkle 1.5s infinite ease-in-out;
+        }
+
+        .ai-generate-button.is-loading {
+            background: linear-gradient(45deg, #64B5F6, #81C784) !important;
+            opacity: 0.9;
+        }
+
+        @keyframes sparkle {
+            0% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.2) rotate(180deg);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(1) rotate(360deg);
+                opacity: 1;
+            }
+        }
+
+        /* 添加树形结构相关样式 */
+        .tree-container {
+            padding: 10px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .custom-tree-node {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 14px;
+            padding-right: 8px;
+        }
+
+        .node-actions {
+            display: none;
+        }
+
+        .el-tree-node__content:hover .node-actions {
+            display: inline-block;
+        }
+
+        /* 根节点样式特殊处理 */
+        .el-tree-node.is-root > .el-tree-node__content {
+            background-color: #f0f7ff;
+            font-weight: bold;
+        }
+
+        /* 节点详情样式 */
+        .node-detail {
+            padding: 10px;
+        }
+
+        .detail-item {
+            margin-bottom: 15px;
+        }
+
+        .detail-item label {
+            font-weight: bold;
+            color: #606266;
+            margin-right: 10px;
+        }
+
+        .detail-content {
+            margin-top: 5px;
+            padding: 10px;
+            background-color: #f8f8f8;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+
+        /* 测试用例选择树样式 */
+        .tree-container {
+            max-height: 600px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .custom-tree-node {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-right: 8px;
+        }
+
+        .node-badges {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 执行详情样式 */
+        .execution-detail {
+            padding: 20px;
+        }
+
+        .test-cases-list {
+            margin-top: 20px;
+        }
+
+        .test-cases-list h3 {
+            margin-bottom: 15px;
+            color: #303133;
+        }
+
+        .operation-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .test-report {
+            padding: 20px;
+        }
+
+        .test-cases-summary {
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: #f5f7fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-title {
+            color: #606266;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .stat-value.success {
+            color: #67C23A;
+        }
+
+        .stat-value.danger {
+            color: #F56C6C;
+        }
+
+        .stat-value.warning {
+            color: #E6A23C;
+        }
+
+        .test-cases-detail {
+            margin-top: 20px;
+        }
+
+    </style>
+</head>
+<body>
+<div id="app" class="management-container">
+    <el-card>
+        <div slot="header">
+            <span>测试用例管理</span>
+            <el-button style="float: right" type="primary" @click="backToMain">返回主页</el-button>
+        </div>
+
+        <!-- 需求列表部分 -->
+        <div class="requirement-list">
+            <div class="section-title">需求列表</div>
+            <el-card>
+                <div class="filter-form">
+                    <el-form :inline="true" :model="requirementFilterForm" size="small">
+                        <el-form-item label="需求名称">
+                            <el-input
+                                    v-model="requirementFilterForm.title"
+                                    placeholder="请输入需求名称"
+                                    clearable
+                                    @clear="loadRequirements">
+                            </el-input>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button type="primary" @click="loadRequirements">查询</el-button>
+                            <el-button type="primary" @click="showAddRequirement">新增需求</el-button>
+                        </el-form-item>
+                    </el-form>
+                </div>
+                <el-table
+                        :data="requirements"
+                        border
+                        stripe
+                        v-loading="loading"
+                        style="width: 100%">
+                    <el-table-column label="需求id" prop="id" width="100" align="center"></el-table-column>
+                    <el-table-column label="需求编号" prop="code" width="100" align="center"></el-table-column>
+                    <el-table-column label="标题" prop="title" show-overflow-tooltip></el-table-column>
+                    <el-table-column label="创建人" prop="creatorName" width="120" align="center"></el-table-column>
+                    <el-table-column label="创建时间" prop="createTime" width="180" align="center">
+                        <template slot-scope="scope">
+                            {{ formatDateTime(scope.row.createTime) }}
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="修改人" prop="updatorName" width="120" align="center"></el-table-column>
+                    <el-table-column label="修改时间" prop="updateTime" width="180" align="center">
+                        <template slot-scope="scope">
+                            {{ formatDateTime(scope.row.createTime) }}
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" width="450" align="left">
+                        <template slot-scope="scope">
+                            <el-button
+                                    size="mini"
+                                    type="primary"
+                                    class="ai-generate-button"
+                                    @click="generateTestCasesForRequirement(scope.row)"
+                                    :loading="scope.row.generating"
+                                    :disabled="scope.row.generating"
+                            >
+                                <i class="el-icon-magic-stick" v-if="!scope.row.generating"></i>
+                                {{ scope.row.generating ? '生成中...' : 'AI生成测试用例' }}
+                            </el-button>
+                            <el-button
+                                    size="mini"
+                                    type="warning"
+                                    @click="editRequirement(scope.row)"
+                                    v-if="canEditRequirement(scope.row)"
+                            >编辑</el-button>
+                            <el-button
+                                    size="mini"
+                                    type="danger"
+                                    @click="deleteRequirement(scope.row)"
+                                    v-if="canEditRequirement(scope.row)"
+                            >删除</el-button>
+                            <el-button
+                                    size="mini"
+                                    type="primary"
+                                    class="ai-generate-code-button"
+                                    @click="generateTestCasesForRequirement1(scope.row)"
+                                    :loading="scope.row.generating"
+                                    :disabled="scope.row.generating"
+                            >
+                                <i class="el-icon-magic-stick" v-if="!scope.row.generating"></i>
+                                {{ scope.row.generating ? '生成中...' : 'AI代码专家评审' }}
+                            </el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+
+                <!-- 添加分页组件 -->
+                <div class="pagination-container">
+                    <el-pagination
+                            @size-change="handleSizeChange"
+                            @current-change="handleCurrentChange"
+                            :current-page="pagination.currentPage"
+                            :page-sizes="[10, 20, 50, 100]"
+                            :page-size="pagination.pageSize"
+                            :total="pagination.total"
+                            layout="total, sizes, prev, pager, next, jumper">
+                    </el-pagination>
+                </div>
+            </el-card>
+        </div>
+
+        <!-- 新增需求弹框 -->
+        <el-dialog :title="requirementDialogTitle" :visible.sync="requirementDialogVisible" width="50%">
+            <el-form :model="requirementForm" :rules="rules" ref="requirementForm" label-width="100px">
+                <el-form-item label="需求标题" prop="title" :rules="[{ required: true, message: '请输入需求标题', trigger: 'blur' }]">
+                    <el-input v-model="requirementForm.title" placeholder="请输入需求标题"></el-input>
+                </el-form-item>
+                <el-form-item label="需求编号" prop="code">
+                    <el-input v-model="requirementForm.code" placeholder="请输入需求编号"></el-input>
+                </el-form-item>
+                <el-form-item label="需求描述" prop="description" :rules="[{ required: true, message: '请输入需求描述', trigger: 'blur' }]">
+                    <el-input type="textarea" v-model="requirementForm.description" rows="4" placeholder="请输入需求描述"></el-input>
+                </el-form-item>
+                <el-form-item label="需求文档" prop="documentUrl">
+                    <el-input v-model="requirementForm.documentUrl" placeholder="请输入需求文档链接">
+                        <template slot="append">
+                            <el-button type="text" @click="openDocumentUrl" :disabled="!requirementForm.documentUrl">
+                                打开链接
+                            </el-button>
+                        </template>
+                    </el-input>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="requirementDialogVisible = false">取 消</el-button>
+                <el-button type="primary" @click="saveRequirement">确 定</el-button>
+
+            </div>
+        </el-dialog>
+
+        <!-- 测试用例列表 -->
+        <div class="test-case-section">
+            <div class="section-title">测试用例列表</div>
+            <el-card>
+                <div class="filter-form">
+                    <el-form :inline="true" :model="filterForm" size="small">
+                        <el-form-item label="需求">
+                            <el-select
+                                    v-model="filterForm.requirementId"
+                                    placeholder="选择需求"
+                                    clearable
+                                    @change="handleRequirementFilter">
+                                <el-option
+                                        v-for="item in requirements"
+                                        :key="item.id"
+                                        :label="item.title"
+                                        :value="item.id">
+                                </el-option>
+                            </el-select>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button type="primary" @click="loadTestCases">查询</el-button>
+                            <el-button type="primary" @click="addTestCase">新增用例目录</el-button>
+                        </el-form-item>
+                    </el-form>
+                </div>
+                <el-table
+                        v-loading="loading"
+                        :data="pagedTestCases"
+                        border
+                        stripe
+                        style="width: 100%">
+                    <el-table-column label="用例ID" prop="id" width="80" align="center"></el-table-column>
+                    <el-table-column label="用例名称" prop="title" show-overflow-tooltip></el-table-column>
+                    <el-table-column label="创建人" prop="creatorName" width="120" align="center"></el-table-column>
+
+                    <!-- 关联需求列 -->
+                    <el-table-column label="关联需求" width="200">
+                        <template slot-scope="scope">
+                            <el-button
+                                    v-if="scope.row.requirement"
+                                    type="text"
+                                    @click="viewRequirementDetail(scope.row.requirement)">
+                                {{ scope.row.requirement.title }}
+                            </el-button>
+                            <span v-else>-</span>
+                        </template>
+                    </el-table-column>
+
+                    <!-- 关联Bug列 -->
+                    <el-table-column label="关联Bug" width="200">
+                        <template slot-scope="scope">
+                            <el-button
+                                    v-if="scope.row.bug"
+                                    type="text"
+                                    @click="viewBugDetail(scope.row.bug)">
+                                {{ scope.row.bug.title }}
+                            </el-button>
+                            <span v-else>-</span>
+                        </template>
+                    </el-table-column>
+
+                    <el-table-column label="优先级" prop="priority" width="100" align="center">
+                        <template slot-scope="scope">
+                            <el-tag :type="getPriorityType(scope.row.priority)" size="small">
+                                {{ scope.row.priority }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+
+                    <el-table-column label="操作" width="350" align="left">
+                        <template slot-scope="scope">
+                            <div style="display: flex; justify-content: center; gap: 4px; padding: 0 8px;">
+                                <el-button
+                                        size="mini"
+                                        @click="showDetail(scope.row)">
+                                    编辑
+                                </el-button>
+                                <el-button
+                                        size="mini"
+                                        type="primary"
+                                        @click="executeTestCase(scope.row)">
+                                    新建测试计划
+                                </el-button>
+                                <el-button
+                                        size="mini"
+                                        type="danger"
+                                        @click="deleteTestCase(scope.row)">
+                                    删除
+                                </el-button>
+
+                            </div>
+                        </template>
+                    </el-table-column>
+                </el-table>
+                <div class="pagination-container">
+                    <el-pagination
+                            @size-change="handleSizeChange"
+                            @current-change="handleCurrentChange"
+                            :current-page.sync="pagination.currentPage"
+                            :page-sizes="[10, 20, 50, 100]"
+                            :page-size="pagination.pageSize"
+                            :total="pagination.total"
+                            layout="total, sizes, prev, pager, next, jumper">
+                    </el-pagination>
+                </div>
+            </el-card>
+        </div>
+
+        <!-- 测试用例树形详情弹窗 -->
+        <el-dialog :visible.sync="detailVisible" width="80%" title="测试用例详情">
+            <div class="tree-container">
+                <el-tree
+                        ref="tree"
+                        :data="caseTree"
+                        :props="treeProps"
+                        node-key="id"
+                        default-expand-all>
+                    <span class="custom-tree-node" slot-scope="{ node, data }">
+                        <span>{{ data.title }}</span>
+                        <span class="node-actions">
+                            <!-- 所有节点都可以添加子节点 -->
+                            <el-button
+                                    type="text"
+                                    size="mini"
+                                    @click.stop="appendNode(data)">
+                                <i class="el-icon-plus"></i>
+                            </el-button>
+                            <!-- 非根节点的操作按钮 -->
+                            <!--  <template v-if="data.parentId !== null"> -->
+                                <el-button
+                                        type="text"
+                                        size="mini"
+                                        @click.stop="viewNodeDetail(data)">
+                                    <i class="el-icon-view"></i>
+                                </el-button>
+                                <el-button
+                                        type="text"
+                                        size="mini"
+                                        @click.stop="editNode(data)">
+                                    <i class="el-icon-edit"></i>
+                                </el-button>
+                                <el-button
+                                        type="text"
+                                        size="mini"
+                                        @click.stop="removeNode(data)">
+                                    <i class="el-icon-delete"></i>
+                                </el-button>
+                            <!-- </template>-->
+                        </span>
+                    </span>
+                </el-tree>
+            </div>
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="detailVisible = false">关闭</el-button>
+            </div>
+        </el-dialog>
+
+        <!-- 节点详情查看弹窗 -->
+        <el-dialog :visible.sync="viewDetailVisible" title="节点详情" width="50%">
+            <div class="node-detail">
+                <div class="detail-item">
+                    <label>标题：</label>
+                    <span>{{ currentNode.title }}</span>
+                </div>
+                <div class="detail-item">
+                    <label>优先级：</label>
+                    <span>{{ currentNode.priority }}</span>
+                </div>
+                <div class="detail-item">
+                    <label>前置条件：</label>
+                    <div class="detail-content">{{ currentNode.precondition || '无' }}</div>
+                </div>
+                <div class="detail-item">
+                    <label>测试步骤：</label>
+                    <div class="detail-content">{{ currentNode.steps || '无' }}</div>
+                </div>
+                <div class="detail-item">
+                    <label>预期结果：</label>
+                    <div class="detail-content">{{ currentNode.expectedResult || '无' }}</div>
+                </div>
+            </div>
+        </el-dialog>
+
+        <!-- 节点编辑弹窗 -->
+        <el-dialog :visible.sync="editVisible" :title="nodeDialogTitle">
+            <el-form :model="editForm" :rules="rules" ref="editForm" label-width="100px">
+                <el-form-item label="标题" prop="title">
+                    <el-input v-model="editForm.title"></el-input>
+                </el-form-item>
+                <el-form-item label="类型" prop="type" v-if="!editForm.parentId">
+                    <el-radio-group v-model="editForm.type">
+                        <el-radio label="folder">目录</el-radio>
+                        <el-radio label="case">用例</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+                <template v-if="editForm.type === 'case'">
+                    <el-form-item label="优先级" prop="priority">
+                        <el-select v-model="editForm.priority">
+                            <el-option label="高" value="HIGH"></el-option>
+                            <el-option label="中" value="MEDIUM"></el-option>
+                            <el-option label="低" value="LOW"></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="前置条件" prop="precondition">
+                        <el-input type="textarea" v-model="editForm.precondition" rows="2"></el-input>
+                    </el-form-item>
+                    <el-form-item label="测试步骤" prop="steps">
+                        <el-input type="textarea" v-model="editForm.steps" rows="4"></el-input>
+                    </el-form-item>
+                    <el-form-item label="预期结果" prop="expectedResult">
+                        <el-input type="textarea" v-model="editForm.expectedResult" rows="2"></el-input>
+                    </el-form-item>
+                </template>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="editVisible = false">取消</el-button>
+                <el-button type="primary" @click="saveNode">确定</el-button>
+            </div>
+        </el-dialog>
+
+        <!-- 新增测试用例弹窗 -->
+        <el-dialog :visible.sync="addTestCaseVisible" title="新增测试用例">
+            <el-form :model="testCaseForm" label-width="100px" :rules="testCaseRules" ref="testCaseForm">
+                <el-form-item label="关联类型" required>
+                    <el-radio-group v-model="testCaseForm.associationType">
+                        <el-radio label="requirement">关联需求</el-radio>
+                        <el-radio label="bug">关联Bug</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+
+                <!-- 关联需求选择 -->
+                <el-form-item
+                        label="关联需求"
+                        prop="requirementId"
+                        v-if="testCaseForm.associationType === 'requirement'"
+                        :rules="[
+                            { required: testCaseForm.associationType === 'requirement', message: '请选择关联需求', trigger: 'change' }
+                        ]"
+                >
+                    <el-select
+                            v-model="testCaseForm.requirementId"
+                            placeholder="请选择需求"
+                            clearable
+                    >
+                        <el-option
+                                v-for="item in requirements"
+                                :key="item.id"
+                                :label="item.title"
+                                :value="item.id">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+
+                <!-- 关联Bug选择 -->
+                <el-form-item
+                        label="关联Bug"
+                        prop="bugId"
+                        v-if="testCaseForm.associationType === 'bug'"
+                        :rules="[
+                            { required: testCaseForm.associationType === 'bug', message: '请选择关联Bug', trigger: 'change' }
+                        ]"
+                >
+                    <el-select
+                            v-model="testCaseForm.bugId"
+                            placeholder="请选择Bug"
+                            clearable
+                    >
+                        <el-option
+                                v-for="item in bugs"
+                                :key="item.id"
+                                :label="item.title"
+                                :value="item.id">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+
+                <el-form-item
+                        label="用例名称"
+                        prop="title"
+                        :rules="[
+                            { required: true, message: '请输入用例名称', trigger: 'blur' },
+                            { min: 2, max: 100, message: '长度在 2 到 100 个字符', trigger: 'blur' }
+                        ]"
+                >
+                    <el-input v-model="testCaseForm.title"></el-input>
+                </el-form-item>
+
+                <el-form-item label="优先级" prop="priority">
+                    <el-select v-model="testCaseForm.priority">
+                        <el-option label="高" value="HIGH"></el-option>
+                        <el-option label="中" value="MEDIUM"></el-option>
+                        <el-option label="低" value="LOW"></el-option>
+                    </el-select>
+                </el-form-item>
+            </el-form>
+            <div slot="footer">
+                <el-button @click="addTestCaseVisible = false">取消</el-button>
+                <el-button type="primary" @click="saveTestCase">确定</el-button>
+            </div>
+        </el-dialog>
+
+        <!-- 在body中添加数据统计部分 -->
+        <div class="statistics-row">
+            <div class="statistic-card">
+                <h3>总用例数</h3>
+                <div class="statistic-value">{{ statistics.totalCases }}</div>
+            </div>
+            <div class="statistic-card" style="background: linear-gradient(135deg, #FF9966 0%, #FF5E62 100%)">
+                <h3>执行中用例</h3>
+                <div class="statistic-value">{{ statistics.runningCases }}</div>
+            </div>
+            <div class="statistic-card" style="background: linear-gradient(135deg, #23BD6B 0%, #1A9C5A 100%)">
+                <h3>已完成用例</h3>
+                <div class="statistic-value">{{ statistics.completedCases }}</div>
+            </div>
+            <div class="statistic-card" style="background: linear-gradient(135deg, #F6416C 0%, #D02E77 100%)">
+                <h3>未解决Bug</h3>
+                <div class="statistic-value">{{ statistics.pendingBugs }}</div>
+            </div>
+        </div>
+
+        <!-- 需求详情对话框 -->
+        <el-dialog :visible.sync="requirementDetailVisible" title="需求详情" width="60%">
+            <el-descriptions :column="2" border>
+                <el-descriptions-item label="需求标题" :span="2">
+                    {{ currentRequirement && currentRequirement.title ? currentRequirement.title : '' }}
+                </el-descriptions-item>
+                <el-descriptions-item label="创建时间">
+                    {{ formatDateTime(currentRequirement && currentRequirement.createTime) }}
+                </el-descriptions-item>
+                <el-descriptions-item label="更新时间">
+                    {{ formatDateTime(currentRequirement && currentRequirement.updateTime) }}
+                </el-descriptions-item>
+                <el-descriptions-item label="需求文档" :span="2">
+                    <el-link
+                            v-if="currentRequirement && currentRequirement.documentUrl"
+                            type="primary"
+                            :href="currentRequirement.documentUrl"
+                            target="_blank">
+                        查看文档
+                    </el-link>
+                    <span v-else>-</span>
+                </el-descriptions-item>
+                <el-descriptions-item label="需求描述" :span="2">
+                    <div style="white-space: pre-wrap;">{{ currentRequirement && currentRequirement.description ? currentRequirement.description : '' }}</div>
+                </el-descriptions-item>
+            </el-descriptions>
+            <div slot="footer">
+                <el-button @click="requirementDetailVisible = false">关闭</el-button>
+            </div>
+        </el-dialog>
+
+        <!-- Bug详情对话框 -->
+        <el-dialog title="Bug详情" :visible.sync="bugDetailVisible" width="60%">
+            <div v-if="currentBug">
+                <el-descriptions border>
+                    <el-descriptions-item label="Bug标题">{{ currentBug.title }}</el-descriptions-item>
+                    <el-descriptions-item label="描述">{{ currentBug.description }}</el-descriptions-item>
+                    <el-descriptions-item label="状态">
+                        <el-tag :type="getBugStatusType(currentBug.status)">{{ currentBug.status }}</el-tag>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="优先级">
+                        <el-tag :type="getPriorityType(currentBug.priority)">{{ currentBug.priority }}</el-tag>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="测试人">{{ currentBug.tester }}</el-descriptions-item>
+                    <el-descriptions-item label="负责人">{{ currentBug.assignee }}</el-descriptions-item>
+                    <el-descriptions-item label="创建时间">{{ currentBug.createTime }}</el-descriptions-item>
+                </el-descriptions>
+            </div>
+        </el-dialog>
+
+        <!-- 执行记录列表部分 -->
+        <div class="execution-records">
+            <div class="section-title">测试计划执行列表</div>
+            <el-card>
+                <div class="filter-form">
+                    <el-form :inline="true" :model="executionPlanFilterForm" size="small">
+                        <el-form-item label="测试用例">
+                            <el-input
+                                    v-model="executionPlanFilterForm.testCaseTitle"
+                                    placeholder="请输入测试用例名称"
+                                    clearable
+                                    @clear="loadExecutionPlans">
+                            </el-input>
+                        </el-form-item>
+                        <el-form-item label="创建人">
+                            <el-input
+                                    v-model="executionPlanFilterForm.creatorName"
+                                    placeholder="创建人"
+                                    clearable
+                                    @clear="loadExecutionPlans">
+                            </el-input>
+                        </el-form-item>
+                        <el-form-item label="执行人">
+                            <el-input
+                                    v-model="executionPlanFilterForm.executorName"
+                                    placeholder="执行人"
+                                    clearable
+                                    @clear="loadExecutionPlans">
+                            </el-input>
+                        </el-form-item>
+                        <el-form-item label="状态">
+                            <el-select
+                                    v-model="executionPlanFilterForm.status"
+                                    placeholder="选择状态"
+                                    clearable
+                                    @change="handleExecutionPlanFilter">
+                                <el-option label="待执行" value="PENDING"></el-option>
+                                <el-option label="执行中" value="IN_PROGRESS"></el-option>
+                                <el-option label="已完成" value="COMPLETED"></el-option>
+                                <el-option label="已废弃" value="ABANDONED"></el-option>
+                            </el-select>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button type="primary" @click="loadExecutionPlans">查询</el-button>
+                        </el-form-item>
+                    </el-form>
+                </div>
+                <el-table
+                        :data="executionPlans"
+                        border
+                        stripe
+                        v-loading="executionLoading"
+                        style="width: 100%">
+                    <el-table-column label="执行ID" prop="id" width="80" align="center"></el-table-column>
+                    <el-table-column label="标题" prop="title" show-overflow-tooltip></el-table-column>
+                    <el-table-column label="创建时间" prop="createTime" width="180" align="center">
+                        <template slot-scope="scope">
+                            {{ formatDateTime(scope.row.createTime) }}
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="创建人" prop="executorName" width="120" align="center">
+                        <template slot-scope="scope">
+                            {{ scope.row.creatorName || '-' }}
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="执行人" prop="executorName" width="120" align="center">
+                        <template slot-scope="scope">
+                            {{ scope.row.executorName || '-' }}
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="执行进度" width="200">
+                        <template slot-scope="scope">
+                            <el-progress :percentage="calculateProgress(scope.row)"></el-progress>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="状态" width="100" align="center">
+                        <template slot-scope="scope">
+                            <el-tag :type="getStatusType(scope.row.status)">{{ getStatusText(scope.row.status) }}</el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" width="300" align="left">
+                        <template slot-scope="scope">
+                            <div class="operation-buttons">
+                                <!-- 初始状态：只显示执行、编辑和删除按钮 -->
+                                <template v-if="scope.row.status === 'PENDING'">
+                                    <el-button
+                                            size="mini"
+                                            type="primary"
+                                            @click="editExecutionPlan(scope.row)"
+                                            v-if="canOperateExecution(scope.row)">
+                                        编辑
+                                    </el-button>
+                                    <el-button
+                                            size="mini"
+                                            type="success"
+                                            @click="startExecution(scope.row)"
+                                            v-if="canOperateExecution(scope.row)">
+                                        执行
+                                    </el-button>
+                                    <el-button
+                                            size="mini"
+                                            type="danger"
+                                            @click="deleteExecution(scope.row)"
+                                            v-if="canOperateExecution(scope.row)">
+                                        删除
+                                    </el-button>
+                                </template>
+
+                                <!-- 执行中状态：显示查看、废弃和删除按钮 -->
+                                <template v-if="scope.row.status === 'IN_PROGRESS'">
+                                    <el-button
+                                            size="mini"
+                                            @click="viewExecutionDetail(scope.row)">
+                                        查看
+                                    </el-button>
+                                    <el-button
+                                            size="mini"
+                                            type="warning"
+                                            @click="abandonExecution(scope.row)"
+                                            v-if="canOperateExecution(scope.row)">
+                                        废弃
+                                    </el-button>
+                                    <el-button
+                                            size="mini"
+                                            type="danger"
+                                            @click="deleteExecution(scope.row)"
+                                            v-if="canOperateExecution(scope.row)">
+                                        删除
+                                    </el-button>
+                                </template>
+
+                                <!-- 已完成状态：显示测试报告和删除按钮 -->
+                                <template v-if="scope.row.status === 'COMPLETED'">
+                                    <el-button
+                                            size="mini"
+                                            type="primary"
+                                            @click="viewTestReport(scope.row)">
+                                        测试报告
+                                    </el-button>
+                                    <el-button
+                                            size="mini"
+                                            type="danger"
+                                            @click="deleteExecution(scope.row)"
+                                            v-if="canOperateExecution(scope.row)">
+                                        删除
+                                    </el-button>
+                                </template>
+
+                                <!-- 已废弃状态：显示删除按钮 -->
+                                <template v-if="scope.row.status === 'ABANDONED'">
+
+                                    <el-button
+                                            size="mini"
+                                            type="danger"
+                                            @click="deleteExecution(scope.row)"
+                                            v-if="canOperateExecution(scope.row)">
+                                        删除
+                                    </el-button>
+                                </template>
+                            </div>
+                        </template>
+                    </el-table-column>
+                </el-table>
+                <!-- 添加分页组件 -->
+                <div class="pagination-container">
+                    <el-pagination
+                            @size-change="handleExecutionSizeChange"
+                            @current-change="handleExecutionCurrentChange"
+                            :current-page.sync="executionPagination.currentPage"
+                            :page-sizes="[10, 20, 50, 100]"
+                            :page-size="executionPagination.pageSize"
+                            :total="executionPagination.total"
+                            layout="total, sizes, prev, pager, next, jumper">
+                    </el-pagination>
+                </div>
+            </el-card>
+        </div>
+
+        <!-- 测试用例选择对话框 -->
+        <el-dialog title="选择测试用例" :visible.sync="testCaseSelectionVisible" width="70%">
+            <div class="tree-container">
+                <el-tree
+                        ref="testCaseTree"
+                        :data="selectedTestCaseTree"
+                        :props="defaultProps"
+                        show-checkbox
+                        node-key="id"
+                        default-expand-all>
+                    <span class="custom-tree-node" slot-scope="{ node, data }">
+                        <span>{{ data.title }}</span>
+                        <span v-if="data.type === 'case'">
+                            <el-tag size="mini" :type="getPriorityType(data.priority)">{{ data.priority }}</el-tag>
+                        </span>
+                    </span>
+                </el-tree>
+            </div>
+            <div slot="footer">
+                <el-button @click="testCaseSelectionVisible = false">取消</el-button>
+                <el-button type="primary" @click="createExecutionPlan">确定</el-button>
+            </div>
+        </el-dialog>
+
+        <!-- 执行详情对话框1 -->
+
+
+        <!-- 用例执行对话框 -->
+        <el-dialog title="执行用例" :visible.sync="executeCaseVisible" width="60%">
+            <el-form :model="executeCaseForm" label-width="100px" v-if="currentCase">
+                <el-form-item label="用例名称">
+                    <span>{{ currentCase.title }}</span>
+                </el-form-item>
+                <el-form-item label="前置条件">
+                    <div class="detail-content">{{ currentCase.precondition }}</div>
+                </el-form-item>
+                <el-form-item label="测试步骤">
+                    <div class="detail-content">{{ currentCase.steps }}</div>
+                </el-form-item>
+                <el-form-item label="预期结果">
+                    <div class="detail-content">{{ currentCase.expectedResult }}</div>
+                </el-form-item>
+                <el-form-item label="实际结果" prop="actualResult">
+                    <el-input type="textarea" v-model="executeCaseForm.actualResult" rows="3"></el-input>
+                </el-form-item>
+                <el-form-item label="执行结果" prop="result">
+                    <el-radio-group v-model="executeCaseForm.result">
+                        <el-radio label="PASS">通过</el-radio>
+                        <el-radio label="FAIL">失败</el-radio>
+                        <el-radio label="BLOCKED">阻塞</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+                <el-form-item label="Bug描述" v-if="executeCaseForm.result === 'FAIL'">
+                    <el-input type="textarea" v-model="executeCaseForm.bugDescription" rows="3"></el-input>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="executeCaseVisible = false">取消</el-button>
+                <el-button type="primary" @click="submitCaseExecution">确定</el-button>
+            </div>
+        </el-dialog>
+
+        <!-- Bug列表部分 -->
+        <div class="bug-list">
+            <div class="section-title">Bug列表</div>
+            <el-card>
+                <div class="filter-form">
+                    <el-form :inline="true" :model="bugFilterForm" size="small">
+                        <el-form-item label="Bug标题">
+                            <el-input
+                                    v-model="bugFilterForm.title"
+                                    placeholder="请输入Bug标题"
+                                    clearable
+                                    @clear="loadBugs">
+                            </el-input>
+                        </el-form-item>
+                        <el-form-item label="关联需求">
+                            <el-select
+                                    v-model="bugFilterForm.requirementId"
+                                    placeholder="选择需求"
+                                    clearable
+                                    @change="loadBugs">
+                                <el-option
+                                        v-for="item in requirements"
+                                        :key="item.id"
+                                        :label="item.title"
+                                        :value="item.id">
+                                </el-option>
+                            </el-select>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button type="primary" @click="loadBugs">查询</el-button>
+                            <el-button type="primary" @click="addBug">新增Bug</el-button>
+                        </el-form-item>
+                    </el-form>
+                </div>
+                <el-table
+                        :data="bugs"
+                        border
+                        stripe
+                        style="width: 100%">
+                    <el-table-column label="Bug ID" prop="id" width="80" align="center"></el-table-column>
+                    <el-table-column label="bug编号" prop="code" width="100" align="center"></el-table-column>
+                    <el-table-column label="标题" prop="title" show-overflow-tooltip></el-table-column>
+                    <el-table-column label="状态" width="100" align="center">
+                        <template slot-scope="scope">
+                            <el-tag :type="getBugStatusType(scope.row.status)">
+                                {{ scope.row.status }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="优先级" width="100" align="center">
+                        <template slot-scope="scope">
+                            <el-tag :type="getPriorityType(scope.row.priority)">
+                                {{ scope.row.priority }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="测试人" prop="testerName" width="120"></el-table-column>
+                    <el-table-column label="负责人" prop="assigneeName" width="120"></el-table-column>
+                    <el-table-column label="创建时间" width="180" align="center">
+                        <template slot-scope="scope">
+                            {{ formatDateTime(scope.row.createTime) }}
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" width="300" align="center">
+                        <template slot-scope="scope">
+                            <el-button size="mini" @click="editBug(scope.row)">编辑</el-button>
+                            <el-button size="mini" type="danger" @click="deleteBug(scope.row)">删除</el-button>
+                            <el-button
+                                    size="mini"
+                                    type="primary"
+                                    class="ai-generate-button"
+                                    @click="generateTestCasesForBug(scope.row)"
+                                    :loading="scope.row.generating"
+                                    :disabled="scope.row.generating"
+                            >
+                                <i class="el-icon-magic-stick" v-if="!scope.row.generating"></i>
+                                {{ scope.row.generating ? '生成中...' : 'AI生成测试用例' }}
+                            </el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+                <!-- 添加分页组件 -->
+                <div class="pagination-container">
+                    <el-pagination
+                            @size-change="handleBugSizeChange"
+                            @current-change="handleBugCurrentChange"
+                            :current-page.sync="bugPagination.currentPage"
+                            :page-sizes="[10, 20, 50, 100]"
+                            :page-size="bugPagination.pageSize"
+                            :total="bugPagination.total"
+                            layout="total, sizes, prev, pager, next, jumper">
+                    </el-pagination>
+                </div>
+            </el-card>
+        </div>
+
+        <!-- Bug编辑对话框 -->
+        <el-dialog :visible.sync="bugDialogVisible" :title="bugDialogTitle" width="60%">
+            <el-form :model="bugForm" label-width="100px" :rules="bugRules" ref="bugForm">
+                <el-form-item label="Bug标题" prop="title" :rules="[{ required: true, message: '请输入Bug标题', trigger: 'blur' }]">
+                    <el-input v-model="bugForm.title"></el-input>
+                </el-form-item>
+                <el-form-item label="Bug描述" prop="description" :rules="[{ required: true, message: '请输入Bug描述', trigger: 'blur' }]">
+                    <el-input type="textarea" v-model="bugForm.description" rows="4"></el-input>
+                </el-form-item>
+                <el-form-item label="状态" prop="status" :rules="[{ required: true, message: '请选择状态', trigger: 'change' }]">
+                    <el-select v-model="bugForm.status">
+                        <el-option label="待处理" value="PENDING"></el-option>
+                        <el-option label="处理中" value="IN_PROGRESS"></el-option>
+                        <el-option label="已修复" value="FIXED"></el-option>
+                        <el-option label="已关闭" value="CLOSED"></el-option>
+                        <el-option label="重新打开" value="REOPENED"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="优先级" prop="priority" :rules="[{ required: true, message: '请选择优先级', trigger: 'change' }]">
+                    <el-select v-model="bugForm.priority">
+                        <el-option label="高" value="HIGH"></el-option>
+                        <el-option label="中" value="MEDIUM"></el-option>
+                        <el-option label="低" value="LOW"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="测试人" prop="testerId" :rules="[{ required: true, message: '请选择测试人', trigger: 'change' }]">
+                    <el-select
+                            v-model="bugForm.testerId"
+                            filterable
+                            remote
+                            clearable
+                            placeholder="请输入姓名搜索"
+                            :remote-method="remoteSearchUsers"
+                            :loading="userSearchLoading">
+                        <el-option
+                                v-for="item in userOptions"
+                                :key="item.id"
+                                :label="item.username"
+                                :value="item.id">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="负责人" prop="assigneeId" :rules="[{ required: true, message: '请选择负责人', trigger: 'change' }]">
+                    <el-select
+                            v-model="bugForm.assigneeId"
+                            filterable
+                            remote
+                            clearable
+                            placeholder="请输入姓名搜索"
+                            :remote-method="remoteSearchUsers"
+                            :loading="userSearchLoading">
+                        <el-option
+                                v-for="item in userOptions"
+                                :key="item.id"
+                                :label="item.username"
+                                :value="item.id">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+            </el-form>
+            <div slot="footer">
+                <el-button @click="bugDialogVisible = false">取消</el-button>
+                <el-button type="primary" @click="saveBug">确定</el-button>
+            </div>
+        </el-dialog>
+    </el-card>
+
+    <!-- 测试用例选择对话框 -->
+    <el-dialog
+            title="选择测试用例"
+            :visible.sync="testCaseSelectionVisible"
+            width="70%"
+            :close-on-click-modal="false">
+        <div class="tree-container">
+            <el-tree
+                    ref="testCaseTree"
+                    :data="selectedTestCaseTree"
+                    :props="defaultProps"
+                    show-checkbox
+                    node-key="id"
+                    default-expand-all
+                    :default-checked-keys="[]"
+                    :check-strictly="false">
+        <span class="custom-tree-node" slot-scope="{ node, data }">
+            <span>{{ data.title }}</span>
+            <span class="node-badges" v-if="data.type === 'case'">
+                <el-tag size="mini" :type="getPriorityType(data.priority)">
+                    {{ data.priority }}
+                </el-tag>
+                <el-button
+                        type="text"
+                        size="mini"
+                        @click.stop="viewNodeDetail(data)">
+                    查看详情
+                </el-button>
+            </span>
+        </span>
+            </el-tree>
+        </div>
+        <div slot="footer" class="dialog-footer">
+            <el-button @click="testCaseSelectionVisible = false">取消</el-button>
+            <el-button type="primary" @click="createExecutionPlan">确定</el-button>
+        </div>
+    </el-dialog>
+
+    <!-- 执行详情对话框2 -->
+    <el-dialog
+            title="执行详情"
+            :visible.sync="executionDetailVisible"
+            width="80%">
+        <div v-if="currentExecution" class="execution-detail">
+            <el-descriptions :column="2" border>
+                <el-descriptions-item label="执行计划ID">
+                    {{ currentExecution.id }}
+                </el-descriptions-item>
+                <el-descriptions-item label="创建人">
+                    {{ currentExecution.creatorName || '-' }}
+                </el-descriptions-item>
+                <el-descriptions-item label="创建时间">
+                    {{ formatDateTime(currentExecution.createTime) }}
+                </el-descriptions-item>
+                <el-descriptions-item label="执行人">
+                    {{ currentExecution.executorName || '-' }}
+                </el-descriptions-item>
+                <el-descriptions-item label="总用例数">
+                    {{ getTestCaseCount(currentExecution.cases) }}
+                </el-descriptions-item>
+                <el-descriptions-item label="已完成用例">
+                    {{ getCompletedCasesCount(currentExecution.cases) }}
+                </el-descriptions-item>
+            </el-descriptions>
+
+            <div class="test-cases-list">
+                <h3>测试用例列表</h3>
+                <el-table :data="filterTestCases(currentExecution.cases)" border>
+                    <el-table-column prop="title" label="用例名称"></el-table-column>
+                    <el-table-column prop="priority" label="优先级" width="100">
+                        <template slot-scope="scope">
+                            <el-tag size="mini" :type="getPriorityType(scope.row.priority)">
+                                {{ scope.row.priority }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="result" label="执行结果" width="100">
+                        <template slot-scope="scope">
+                            <el-tag size="mini" :type="getResultType(scope.row.result)" v-if="scope.row.result">
+                                {{ getResultText(scope.row.result) }}
+                            </el-tag>
+                            <span v-else>-</span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" width="200" align="center">
+                        <template slot-scope="scope">
+                            <el-button
+                                    size="mini"
+                                    type="primary"
+                                    @click="executeCase(scope.row)"
+                                    v-if="scope.row.status === 'PENDING'">
+                                执行
+                            </el-button>
+                            <el-button
+                                    size="mini"
+                                    type="info"
+                                    @click="viewCaseDetail(scope.row)">
+                                详情
+                            </el-button>
+
+
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </div>
+        </div>
+        <div slot="footer" class="dialog-footer">
+            <el-button @click="executionDetailVisible = false">关闭</el-button>
+            <el-button
+                    type="primary"
+                    @click="startExecution(currentExecution)"
+                    v-if="currentExecution && currentExecution.status === 'PENDING'">
+                开始执行
+            </el-button>
+        </div>
+    </el-dialog>
+
+    <!-- 用例执行对话框 -->
+    <el-dialog title="执行用例" :visible.sync="executeCaseVisible" width="60%">
+        <el-form :model="executeCaseForm" label-width="100px" v-if="currentCase">
+            <el-form-item label="用例名称">
+                <span>{{ currentCase.title }}</span>
+            </el-form-item>
+            <el-form-item label="前置条件">
+                <div class="detail-content">{{ currentCase.precondition }}</div>
+            </el-form-item>
+            <el-form-item label="测试步骤">
+                <div class="detail-content">{{ currentCase.steps }}</div>
+            </el-form-item>
+            <el-form-item label="预期结果">
+                <div class="detail-content">{{ currentCase.expectedResult }}</div>
+            </el-form-item>
+            <el-form-item label="实际结果" prop="actualResult">
+                <el-input type="textarea" v-model="executeCaseForm.actualResult" rows="3"></el-input>
+            </el-form-item>
+            <el-form-item label="执行结果" prop="result">
+                <el-radio-group v-model="executeCaseForm.result">
+                    <el-radio label="PASS">通过</el-radio>
+                    <el-radio label="FAIL">失败</el-radio>
+                    <el-radio label="BLOCKED">阻塞</el-radio>
+                </el-radio-group>
+            </el-form-item>
+            <el-form-item label="Bug描述" v-if="executeCaseForm.result === 'FAIL'">
+                <el-input type="textarea" v-model="executeCaseForm.bugDescription" rows="3"></el-input>
+            </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+            <el-button @click="executeCaseVisible = false">取消</el-button>
+            <el-button type="primary" @click="submitCaseExecution">确定</el-button>
+        </div>
+    </el-dialog>
+
+    <!-- 编辑执行计划对话框 -->
+    <el-dialog title="编辑执行计划" :visible.sync="editExecutionPlanVisible" width="50%">
+        <el-form :model="editExecutionPlanForm" label-width="100px">
+            <el-form-item label="计划标题" required>
+                <el-input v-model="editExecutionPlanForm.title"></el-input>
+            </el-form-item>
+            <el-form-item label="执行人" required>
+                <el-select
+                        v-model="editExecutionPlanForm.executorId"
+                        filterable
+                        remote
+                        reserve-keyword
+                        placeholder="请输入关键词"
+                        :remote-method="remoteSearchUsers"
+                        :loading="userSearchLoading">
+                    <el-option
+                            v-for="item in userOptions"
+                            :key="item.id"
+                            :label="item.username"
+                            :value="item.id">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+            <el-button @click="editExecutionPlanVisible = false">取消</el-button>
+            <el-button type="primary" @click="saveExecutionPlan">确定</el-button>
+        </div>
+    </el-dialog>
+
+    <!-- 测试报告对话框 -->
+    <el-dialog title="测试报告" :visible.sync="testReportVisible" width="80%">
+        <div v-if="currentReport" class="test-report">
+            <el-descriptions :column="2" border>
+                <el-descriptions-item label="执行计划">{{ currentReport.title }}</el-descriptions-item>
+                <el-descriptions-item label="执行人">{{ currentReport.executorName }}</el-descriptions-item>
+                <el-descriptions-item label="创建时间">{{ formatDateTime(currentReport.createTime) }}</el-descriptions-item>
+                <el-descriptions-item label="完成时间">{{ formatDateTime(currentReport.completionTime) }}</el-descriptions-item>
+                <el-descriptions-item label="执行时长">{{ currentReport.executionDuration }}</el-descriptions-item>
+                <el-descriptions-item label="执行评分">
+                    <el-tag :type="getScoreType(currentReport.executionScore)">
+                        {{ currentReport.executionScore }}
+                    </el-tag>
+                </el-descriptions-item>
+            </el-descriptions>
+
+            <div class="test-cases-summary">
+                <h3>用例执行统计</h3>
+                <el-row :gutter="20">
+                    <el-col :span="6">
+                        <div class="stat-card">
+                            <div class="stat-title">总用例数</div>
+                            <div class="stat-value">{{ getTestCaseCount(currentReport.cases) }}</div>
+                        </div>
+                    </el-col>
+                    <el-col :span="6">
+                        <div class="stat-card">
+                            <div class="stat-title">通过数</div>
+                            <div class="stat-value success">{{ getPassedCaseCount(currentReport.cases) }}</div>
+                        </div>
+                    </el-col>
+                    <el-col :span="6">
+                        <div class="stat-card">
+                            <div class="stat-title">失败数</div>
+                            <div class="stat-value danger">{{ getFailedCaseCount(currentReport.cases) }}</div>
+                        </div>
+                    </el-col>
+                    <el-col :span="6">
+                        <div class="stat-card">
+                            <div class="stat-title">阻塞数</div>
+                            <div class="stat-value warning">{{ getBlockedCaseCount(currentReport.cases) }}</div>
+                        </div>
+                    </el-col>
+                </el-row>
+            </div>
+
+            <div class="test-cases-detail">
+                <h3>用例执行明细</h3>
+                <el-table :data="filterTestCases(currentReport.cases)" border>
+                    <el-table-column prop="title" label="用例名称"></el-table-column>
+                    <el-table-column prop="priority" label="优先级" width="100">
+                        <template slot-scope="scope">
+                            <el-tag size="mini" :type="getPriorityType(scope.row.priority)">
+                                {{ scope.row.priority }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="result" label="执行结果" width="100">
+                        <template slot-scope="scope">
+                            <el-tag size="mini" :type="getResultType(scope.row.result)">
+                                {{ getResultText(scope.row.result) }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="actualResult" label="实际结果"></el-table-column>
+                    <el-table-column prop="bugDescription" label="Bug描述">
+                        <template slot-scope="scope">
+                            {{ scope.row.bugDescription || '-' }}
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </div>
+        </div>
+    </el-dialog>
+</div>
+
+<script>
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                generatingOutline: false,
+                requirementForm: {
+                    title: '',
+                    description: '',
+                    documentUrl: '',
+                    priority: 'MEDIUM',
+                    status: 'PENDING',
+                    code:''
+                },
+                requirements: [],
+                outlineDialogVisible: false,
+                casesDialogVisible: false,
+                executionDetailVisible: false,
+                currentOutline: null,
+                testCases: [],
+                executionRecords: [],
+                currentExecution: {
+                    id: null,
+                    title: '',
+                    creatorName: '',
+                    executorName: '',
+                    createTime: null,
+                    cases: []
+                },
+                defaultProps: {
+                    children: 'children',
+                    label: 'title'
+                },
+                nodeDialogVisible: false,
+                nodeDialogTitle: '',
+                nodeForm: {
+                    id: null,
+                    title: '',
+                    description: '',
+                    type: 'folder', // folder 或 case
+                    priority: 'MEDIUM',
+                    precondition: '',
+                    steps: '',
+                    expectedResult: '',
+                    parentId: null
+                },
+                currentNode: {
+                    title: '',
+                    priority: '',
+                    precondition: '',
+                    steps: '',
+                    expectedResult: '',
+                    type: '',
+                    parentId: null,
+                    children: []
+                },
+                rules: {
+                    title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
+                    type: [{ required: true, message: '请选择类型', trigger: 'change' }],
+                    priority: [{ required: true, message: '请选择优先级', trigger: 'change' }],
+                    precondition: [{ required: true, message: '请输入前置条件', trigger: 'blur' }],
+                    steps: [{ required: true, message: '请输入测试步骤', trigger: 'blur' }],
+                    expectedResult: [{ required: true, message: '请输入预期结果', trigger: 'blur' }]
+                },
+                activeCollapse: [], // 折叠面板的激活状态
+                selectedRequirement: null, // 当前选中的需求
+                filterForm: {
+                    requirementId: null
+                },
+                requirementFilterForm: {
+                    title: ''
+                },
+                executionFilterForm: {
+                    status: ''
+                },
+                bugs: [],
+                bugFilterForm: {
+                    title: '',
+                    requirementId: null
+                },
+                bugDialogVisible: false,
+                bugDialogTitle: '',
+                bugForm: {
+                    id: null,
+                    title: '',
+                    description: '',
+                    rootCause: '',
+                    status: 'PENDING',
+                    priority: 'MEDIUM',
+                    testerId: null,
+                    testerName: '',
+                    assigneeId: null,
+                    assigneeName: '',
+                    creatorId: null,
+                    creatorName: '',
+                    requirementId: null
+                },
+                caseTree: [],
+                detailVisible: false,
+                editVisible: false,
+                editForm: {
+                    id: null,
+                    title: '',
+                    type: 'case',
+                    priority: 'MEDIUM',
+                    precondition: '',
+                    steps: '',
+                    expectedResult: '',
+                    parentId: null
+                },
+                addTestCaseVisible: false,
+                testCaseForm: {
+                    associationType: 'requirement', // 默认关联需求
+                    requirementId: null,
+                    bugId: null,
+                    title: '',
+                    priority: 'MEDIUM'
+                },
+                currentPage: 1,
+                pageSize: 10,
+                statistics: {
+                    totalCases: 0,
+                    runningCases: 0,
+                    completedCases: 0,
+                    pendingBugs: 0
+                },
+                loading: false,
+                executionLoading: false, // 新增执行计划列表的loading变量
+                treeLoading: false, // 新增树形数据加载的loading变量
+                pagedTestCases: [],
+                pagination: {
+                    currentPage: 1,
+                    pageSize: 10,
+                    total: 0
+                },
+                testCaseRules: [
+                    { required: true, message: '请选择关联类型', trigger: 'change' },
+                    { required: true, message: '请选择关联需求或关联Bug', trigger: 'change' },
+                    { required: true, message: '请输入用例名称', trigger: 'blur' },
+                    { min: 2, max: 100, message: '长度在 2 到 100 个字符', trigger: 'blur' }
+                ],
+                requirementDetailVisible: false,
+                bugDetailVisible: false,
+                currentRequirement: {
+                    title: '',
+                    description: '',
+                    createTime: null,
+                    updateTime: null,
+                    documentUrl: ''
+                },
+                currentBug: {
+                    title: '',
+                    description: '',
+                    status: '',
+                    priority: '',
+                    tester: '',
+                    assignee: '',
+                    createTime: null
+                },
+                testCaseSelectionVisible: false,
+                selectedTestCaseTree: [],
+                selectedNodes: [], // 存储选中的节点
+                requirementDialogVisible: false,
+                executionPagination: {
+                    currentPage: 1,
+                    pageSize: 10,
+                    total: 0
+                },
+                bugPagination: {
+                    currentPage: 1,
+                    pageSize: 10,
+                    total: 0
+                },
+                currentRootId: null,
+                currentUser: {
+                    id: null,
+                    username: '',
+                    roles: []  // 确保roles字段初始化为空数组
+                },
+                executionPlanFilterForm: {
+                    status: ''
+                },
+                executionPlans: [],
+                requirementDialogTitle: '新增需求',  // 需求对话框标题
+                treeProps: {
+                    label: 'title',
+                    children: 'children'
+                },
+                currentTestCase: {
+                    id: null,
+                    title: '',
+                    description: '',
+                    priority: '',
+                    requirement: null,
+                    bug: null
+                },
+                viewDetailVisible: false,
+                testCaseSelectionVisible: false,
+                selectedTestCaseTree: [],
+                currentExecution: null,
+                executionDetailVisible: false,
+                defaultProps: {
+                    children: 'children',
+                    label: 'title'
+                },
+                executeCaseVisible: false,
+                currentCase: {
+                    title: '',
+                    priority: '',
+                    precondition: '',
+                    steps: '',
+                    expectedResult: '',
+                    type: '',
+                    parentId: null,
+                    children: []
+                },
+                executeCaseForm: {
+                    actualResult: '',
+                    result: '',
+                    bugDescription: ''
+                },
+                editExecutionPlanVisible: false,
+                editExecutionPlanForm: {
+                    title: '',
+                    executorId: null
+                },
+                userSearchLoading: false,
+                userOptions: [],
+                currentReport: {
+                    title: '',
+                    executorName: '',
+                    createTime: null,
+                    completionTime: null,
+                    executionDuration: '',
+                    executionScore: 0,
+                    cases: []
+                },
+                testReportVisible: false,
+                bugRules: {
+                    title: [
+                        { required: true, message: '请输入Bug标题', trigger: 'blur' }
+                    ],
+                    description: [
+                        { required: true, message: '请输入Bug描述', trigger: 'blur' }
+                    ],
+                    status: [
+                        { required: true, message: '请选择状态', trigger: 'change' }
+                    ],
+                    priority: [
+                        { required: true, message: '请选择优先级', trigger: 'change' }
+                    ],
+                    testerId: [
+                        { required: true, message: '请选择测试人', trigger: 'change' }
+                    ],
+                    assigneeId: [
+                        { required: true, message: '请选择负责人', trigger: 'change' }
+                    ]
+                }
+            }
+        },
+        created() {
+            // 页面创建时加载数据
+            this.loadRequirements();  // 加载需求列表
+            this.loadTestCases();     // 加载测试用例列表
+            this.loadBugs();          // 加载Bug列表
+            this.loadStatistics();    // 加载统计数据
+            this.loadCurrentUser();    // 加载当前用户信息
+            this.loadExecutionPlans(); // 添加加载执行计划列表
+        },
+        methods: {
+            // 执行测试用例，打开选择对话框
+            executeTestCase(testCase) {
+                this.currentTestCase = testCase;
+                this.selectedNodes = []; // 存储选中的节点
+                this.loadTestCaseTree(testCase.id);
+            },
+
+            // 加载测试用例树
+            async loadTestCaseTree(testCaseId) {
+                try {
+                    const response = await axios.get(`/api/test-cases/${testCaseId}/tree`);
+                    this.selectedTestCaseTree = response.data;
+                    this.testCaseSelectionVisible = true;
+                } catch (error) {
+                    this.$message.error('加载测试用例树失败：' + error.message);
+                }
+            },
+
+            // 创建执行计划
+            async createExecutionPlan() {
+                try {
+                    // 获取选中的节点
+                    const checkedNodes = this.$refs.testCaseTree.getCheckedNodes();
+                    if (checkedNodes.length === 0) {
+                        this.$message.warning('请至少选择一个测试用例节点');
+                        return;
+                    }
+
+                    // 检查 currentTestCase 是否存在
+                    if (!this.currentTestCase || !this.currentTestCase.id) {
+                        this.$message.error('当前测试用例信息不完整');
+                        return;
+                    }
+
+                    // 构造请求数据，符合服务器端 ExecutionPlanCreateRequest 的结构
+                    const response = await axios.post('/api/execution-plans', {
+                        testCaseId: this.currentTestCase.id,
+                        title: `${this.currentTestCase.title || '测试用例'}的执行计划`,  // 添加标题
+                        selectedNodes: checkedNodes.map(node => node.id)  // 只发送节点ID
+                    });
+
+                    this.testCaseSelectionVisible = false;
+                    this.$message.success('测试计划创建成功');
+
+                    // 刷新执行计划列表
+                    this.loadExecutionPlans();
+                } catch (error) {
+                    let errorMsg = '创建测试计划失败';
+                    if (error.response?.data?.message) {
+                        errorMsg += ': ' + error.response.data.message;
+                    }
+                    this.$message.error(errorMsg);
+                }
+            },
+
+            // 查看执行详情
+            async viewExecutionDetail(execution) {
+                try {
+                    const response = await axios.get(`/api/execution-plans/${execution.id}`);
+                    this.currentExecution = response.data;
+                    this.executionDetailVisible = true;
+                } catch (error) {
+                    this.$message.error('获取详情失败：' + error.message);
+                }
+            },
+
+            // 开始执行测试
+            async startExecution(execution) {
+                try {
+                    await axios.post(`/api/execution-plans/${execution.id}/start`);
+                    this.$message.success('执行已开始');
+                    // 更新当前执行计划的状态
+                    execution.status = 'IN_PROGRESS';
+                    // 重新加载执行计划列表
+                    await this.loadExecutionPlans();
+                } catch (error) {
+                    this.$message.error('操作失败：' + error.message);
+                }
+            },
+            backToMain() {
+                window.location.href = '/test-guardian.html';
+            },
+
+            async loadRequirements() {
+                try {
+                    let url = '/api/requirements';
+                    if (this.requirementFilterForm.title) {
+                        url += `?title=${encodeURIComponent(this.requirementFilterForm.title)}`;
+                    }
+                    const response = await fetch(url);
+                    this.requirements = await response.json();
+                } catch (error) {
+                    this.$message.error('加载需求列表失败');
+                }
+            },
+            openDocumentUrl() {
+                if (this.requirementForm.documentUrl) {
+                    window.open(this.requirementForm.documentUrl, '_blank');
+                }
+            },
+            async viewTestOutline(requirement) {
+                try {
+                    const response = await fetch(`/api/requirements/${requirement.id}/outline`);
+                    this.currentOutline = await response.json();
+                    this.outlineDialogVisible = true;
+                } catch (error) {
+                    this.$message.error('加载测试大纲失败');
+                }
+            },
+            viewTestCases(requirement) {
+                this.selectedRequirement = requirement;
+                this.loadTestCases();
+            },
+            async loadTestCases() {
+                this.loading = true;
+                try {
+                    const params = new URLSearchParams({
+                        page: this.pagination.currentPage - 1, // Spring Boot 分页从0开始
+                        size: this.pagination.pageSize
+                    });
+
+                    if (this.filterForm.requirementId) {
+                        params.append('requirementId', this.filterForm.requirementId);
+                    }
+
+                    const response = await axios.get(`/api/test-cases?${params}`);
+                    this.pagedTestCases = response.data.content;
+                    this.pagination.total = response.data.totalElements;
+                } catch (error) {
+                    this.$message.error('加载测试用例失败');
+                } finally {
+                    this.loading = false;
+                }
+            },
+            async loadExecutionRecords() {
+                try {
+                    const params = new URLSearchParams({
+                        page: this.executionPagination.currentPage - 1,
+                        size: this.executionPagination.pageSize
+                    });
+
+                    if (this.executionFilterForm.status) {
+                        params.append('status', this.executionFilterForm.status);
+                    }
+
+                    const response = await axios.get(`/api/execution-plans?${params}`);
+                    this.executionRecords = response.data.content;
+                    this.executionPagination.total = response.data.totalElements;
+                } catch (error) {
+                    this.$message.error('加载执行记录失败：' + error.message);
+                }
+            },
+            getStatusType(status) {
+                const types = {
+                    'PENDING': 'info',
+                    'IN_PROGRESS': 'warning',
+                    'COMPLETED': 'success',
+                    'ABANDONED': 'danger'
+                };
+                return types[status] || 'info';
+            },
+            async viewExecutionDetail(execution) {
+                try {
+                    const { data } = await axios.get(`/api/execution-plans/${execution.id}/detail`);
+                    this.currentExecution = data;
+                    this.executionDetailVisible = true;
+                } catch (error) {
+                    this.$message.error('获取详情失败：' + error.message);
+                }
+            },
+            async startExecution(execution) {
+                try {
+                    await axios.post(`/api/execution-plans/${execution.id}/start`);
+                    this.$message.success('执行已开始');
+                    // 更新当前执行计划的状态
+                    execution.status = 'IN_PROGRESS';
+                    // 重新加载执行计划列表
+                    await this.loadExecutionPlans();
+                } catch (error) {
+                    this.$message.error('操作失败：' + error.message);
+                }
+            },
+            async abandonExecution(execution) {
+                try {
+                    await axios.post(`/api/execution-plans/${execution.id}/abandon`);
+                    this.$message.success('执行计划已废弃');
+                    this.loadExecutionPlans();
+                } catch (error) {
+                    this.$message.error('操作失败：' + error.message);
+                }
+            },
+            async deleteExecution(execution) {
+                try {
+                    await this.$confirm('确认删除该执行计划?', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    });
+                    await axios.delete(`/api/execution-plans/${execution.id}`);
+                    this.$message.success('删除成功');
+                    this.loadExecutionPlans();
+                } catch (error) {
+                    if (error !== 'cancel') {
+                        this.$message.error('删除失败：' + error.message);
+                    }
+                }
+            },
+            handleExecutionFilter() {
+                this.loadExecutionRecords();
+            },
+            async loadBugs() {
+                try {
+                    const params = new URLSearchParams({
+                        page: this.bugPagination.currentPage - 1,
+                        size: this.bugPagination.pageSize
+                    });
+
+                    if (this.bugFilterForm.title) {
+                        params.append('title', this.bugFilterForm.title);
+                    }
+                    if (this.bugFilterForm.requirementId) {
+                        params.append('requirementId', this.bugFilterForm.requirementId);
+                    }
+
+                    const response = await axios.get(`/api/bugs?${params}`);
+                    this.bugs = response.data;
+                    this.bugPagination.total = response.data.length;
+                } catch (error) {
+                    this.$message.error('加载Bug列表失败');
+                }
+            },
+            addBug() {
+                this.bugDialogTitle = '新增Bug';
+                this.bugForm = {
+                    id: null,
+                    title: '',
+                    description: '',
+                    rootCause: '',
+                    status: 'PENDING',
+                    priority: 'MEDIUM',
+                    testerId: null,
+                    testerName: '',
+                    assigneeId: null,
+                    assigneeName: '',
+                    creatorId: null,
+                    creatorName: '',
+                    requirementId: null
+                };
+                this.bugDialogVisible = true;
+            },
+            editBug(bug) {
+                this.bugDialogTitle = '编辑Bug';
+                this.bugForm = { ...bug };
+                this.bugDialogVisible = true;
+            },
+            async saveBug() {
+                this.$refs.bugForm.validate(async (valid) => {
+                    if (!valid) return;
+                    try {
+                        const url = this.bugForm.id ?
+                            `/api/bugs/${this.bugForm.id}` :
+                            '/api/bugs';
+                        const method = this.bugForm.id ? 'PUT' : 'POST';
+
+                        const response = await fetch(url, {
+                            method,
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(this.bugForm)
+                        });
+
+                        if (response.ok) {
+                            this.$message.success(this.bugForm.id ? '更新成功' : '创建成功');
+                            this.bugDialogVisible = false;
+                            this.loadBugs();
+                        }
+                    } catch (error) {
+                        this.$message.error(this.bugForm.id ? '更新失败' : '创建失败');
+                    }
+                });
+            },
+            async deleteBug(bug) {
+                try {
+                    await this.$confirm('确认删除该Bug?', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    });
+
+                    const response = await fetch(`/api/bugs/${bug.id}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                        this.$message.success('删除成功');
+                        this.loadBugs();
+                    }
+                } catch (error) {
+                    if (error !== 'cancel') {
+                        this.$message.error('删除失败');
+                    }
+                }
+            },
+            getBugStatusType(status) {
+                const types = {
+                    'PENDING': 'info',
+                    'IN_PROGRESS': 'warning',
+                    'FIXED': 'success',
+                    'CLOSED': 'success',
+                    'REOPENED': 'danger'
+                };
+                return types[status] || 'info';
+            },
+            async showDetail(testCase) {
+                this.currentTestCase = testCase;
+                this.treeLoading = true;
+                try {
+                    const response = await axios.get(`/api/test-cases/${testCase.id}/tree`);
+                    this.caseTree = response.data;
+                    this.detailVisible = true;
+
+                    // 添加调试日志
+                    console.log('Loaded tree data:', this.caseTree);
+                } catch (error) {
+                    this.$message.error('加载测试用例树失败：' + error.message);
+                } finally {
+                    this.treeLoading = false;
+                }
+            },
+            handleNodeClick(node) {
+                if (node.type === 'case') {
+                    this.editNode(node);
+                }
+            },
+            handleDragEnd(draggingNode, dropNode, dropType, ev) {
+                // 拖拽结束后自动保存
+                this.saveTestCaseTree().catch(error => {
+                    this.$message.error('保存失败：' + error.message);
+                });
+            },
+            appendNode(data) {
+                this.editForm = {
+                    id: null,  // 新节点，暂时不设置id
+                    title: '',
+                    type: 'case',
+                    priority: 'MEDIUM',
+                    precondition: '',
+                    steps: '',
+                    expectedResult: '',
+                    parentId: data.id,
+                    children: []
+                };
+                this.nodeDialogTitle = '新增测试用例';
+                this.editVisible = true;
+            },
+            async saveNode() {
+                this.$refs.editForm.validate(async (valid) => {
+                    if (valid) {
+                        try {
+                            const treeData = JSON.parse(JSON.stringify(this.caseTree));
+
+                            // 如果是新增节点
+                            if (!this.editForm.id) {
+                                // 找到父节点
+                                const addToParent = (tree, parentId) => {
+                                    for (let node of tree) {
+                                        if (node.id === parentId) {
+                                            if (!node.children) {
+                                                node.children = [];
+                                            }
+                                            // 创建新节点
+                                            const newNode = {
+                                                ...this.editForm,
+                                                id: Date.now(), // 临时ID
+                                                children: []
+                                            };
+                                            node.children.push(newNode);
+                                            return true;
+                                        }
+                                        if (node.children && node.children.length > 0) {
+                                            if (addToParent(node.children, parentId)) {
+                                                return true;
+                                            }
+                                        }
+                                    }
+                                    return false;
+                                };
+
+                                addToParent(treeData, this.editForm.parentId);
+                            } else {
+                                // 编辑现有节点
+                                const updateNode = (tree, nodeData) => {
+                                    for (let node of tree) {
+                                        if (node.id === nodeData.id) {
+                                            const children = node.children || [];
+                                            Object.assign(node, nodeData);
+                                            node.children = children;
+                                            return true;
+                                        }
+                                        if (node.children && node.children.length > 0) {
+                                            if (updateNode(node.children, nodeData)) {
+                                                return true;
+                                            }
+                                        }
+                                    }
+                                    return false;
+                                };
+
+                                updateNode(treeData, this.editForm);
+                            }
+
+                            // 保存到后端
+                            await axios.put(`/api/test-cases/${this.currentTestCase.id}/tree`, {
+                                treeData: treeData
+                            });
+
+                            // 更新本地树数据
+                            this.caseTree = treeData;
+                            this.editVisible = false;
+                            this.$refs.editForm.resetFields();
+                            this.$message.success('保存成功');
+                        } catch (error) {
+                            this.$message.error('保存失败：' + error.message);
+                        }
+                    } else {
+                        return false;
+                    }
+                });
+            },
+            editNode(node) {
+                this.editForm = {
+                    id: node.id,
+                    title: node.title || '',
+                    type: node.type || 'case',
+                    priority: node.priority || 'MEDIUM',
+                    precondition: node.precondition || '',
+                    steps: node.steps || '',
+                    expectedResult: node.expectedResult || '',
+                    parentId: node.parentId
+                };
+                this.nodeDialogTitle = '编辑节点';
+                this.editVisible = true;
+            },
+            async removeNode(node) {
+                try {
+                    await this.$confirm('确认删除该节点及其所有子节点?', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    });
+
+                    const parent = this.findParentNode(this.caseTree[0], node.parentId);
+                    if (parent) {
+                        parent.children = parent.children.filter(child => child.id !== node.id);
+                        await this.saveTestCaseTree();
+                        this.$message.success('删除成功');
+                    }
+                } catch (error) {
+                    if (error !== 'cancel') {
+                        this.$message.error('删除失败：' + error.message);
+                    }
+                }
+            },
+            findParentNode(root, parentId) {
+                if (!root) return null;
+                if (root.id === parentId) return root;
+                if (root.children) {
+                    for (const child of root.children) {
+                        const found = this.findParentNode(child, parentId);
+                        if (found) return found;
+                    }
+                }
+                return null;
+            },
+            async saveTestCaseTree() {
+                try {
+                    // 检查 currentTestCase 是否存在
+                    if (!this.currentTestCase || !this.currentTestCase.id) {
+                        this.$message.error('当前测试用例信息不完整');
+                        return;
+                    }
+
+                    // 检查并打印树形数据，便于调试
+                    console.log('Saving tree data:', this.caseTree);
+
+                    await axios.put(`/api/test-cases/${this.currentTestCase.id}/tree`, {
+                        treeData: this.caseTree
+                    });
+
+                    this.$message.success('保存成功');
+                    // 不要立即关闭对话框，让用户可以继续编辑
+                    // this.detailVisible = false;
+                    // this.loadTestCases(); // 暂时不刷新列表
+                } catch (error) {
+                    this.$message.error('保存失败：' + error.message);
+                }
+            },
+            getPriorityType(priority) {
+                const types = {
+                    'HIGH': 'danger',
+                    'MEDIUM': 'warning',
+                    'LOW': 'info'
+                };
+                return types[priority] || 'info';
+            },
+            async deleteTestCase(testCase) {
+                try {
+
+                    await this.$confirm('确认删除该测试用例?', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    });
+
+                    await axios.delete(`/api/test-cases/${testCase.id}`);
+                    this.$message.success('删除成功');
+                    this.loadTestCases();
+
+                } catch (error) {
+                    if (error !== 'cancel') {
+                        this.$message.error('操作失败：' + (error.response?.data?.message || error.message));
+                    }
+                }
+            },
+            handleRequirementFilter() {
+                this.loadTestCases();
+            },
+            getRequirementTitle(requirementId) {
+                const requirement = this.requirements.find(r => r.id === requirementId);
+                return requirement ? requirement.title : '';
+            },
+
+
+            viewBugDetail(bug) {
+                this.currentBug = bug;
+                this.bugDetailVisible = true;
+            },
+
+            viewRequirementDetail(requirement) {
+                this.currentRequirement = requirement;
+                this.requirementDetailVisible = true;
+            },
+            async saveRequirement() {
+                try {
+                    await this.$refs.requirementForm.validate();
+
+                    const url = this.requirementForm.id ?
+                        `/api/requirements/${this.requirementForm.id}` :
+                        '/api/requirements/save';
+                    const method = this.requirementForm.id ? 'PUT' : 'POST';
+
+                    const response = await fetch(url, {
+                        method,
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(this.requirementForm)
+                    });
+
+                    if (response.ok) {
+                        this.$message.success(this.requirementForm.id ? '更新成功' : '创建成功');
+                        this.requirementDialogVisible = false;
+                        this.loadRequirements();
+                    }
+                } catch (error) {
+                    this.$message.error(this.requirementForm.id ? '更新失败' : '创建失败');
+                }
+            },
+            handleExecutionSizeChange(val) {
+                this.executionPagination.pageSize = val;
+                this.loadExecutionPlans();
+            },
+            handleExecutionCurrentChange(val) {
+                this.executionPagination.currentPage = val;
+                this.loadExecutionPlans();
+            },
+            handleBugSizeChange(val) {
+                this.bugPagination.pageSize = val;
+                this.loadBugs();
+            },
+            handleBugCurrentChange(val) {
+                this.bugPagination.currentPage = val;
+                this.loadBugs();
+            },
+            async loadCurrentUser() {
+                try {
+                    const response = await axios.get('/api/users/current');
+                    if (response.data) {
+                        this.currentUser = {
+                            id: response.data.id,
+                            username: response.data.username,
+                            roles: response.data.roles || []
+                        };
+                    } else {
+                        // 如果没有获取到用户信息，设置默认值
+                        this.currentUser = {
+                            id: null,
+                            username: '',
+                            roles: []
+                        };
+                    }
+                } catch (error) {
+                    console.error('加载用户信息失败:', error);
+                    this.$message.error('加载用户信息失败');
+                    // 发生错误时也设置默认值
+                    this.currentUser = {
+                        id: null,
+                        username: '',
+                        roles: []
+                    };
+                }
+            },
+            async loadStatistics() {
+                try {
+                    // 从执行计划列表中统计数据
+                    const inProgressCount = this.executionPlans.filter(plan => plan.status === 'IN_PROGRESS').length;
+                    const completedCount = this.executionPlans.filter(plan => plan.status === 'COMPLETED').length;
+                    
+                    // 更新统计数据
+                    this.statistics.runningCases = inProgressCount;
+                    this.statistics.completedCases = completedCount;
+                    
+                    // 总用例数仍然从后端获取
+                    const response = await axios.get('/api/test-cases/statistics');
+                    this.statistics.totalCases = response.data.totalCases;
+                    this.statistics.pendingBugs = response.data.pendingBugs;
+                } catch (error) {
+                    this.$message.error('加载统计信息失败');
+                }
+            },
+            showAddRequirement() {
+                this.requirementForm = {
+                    title: '',
+                    description: '',
+                    documentUrl: ''
+                };
+                this.requirementDialogTitle = '新增需求';
+                this.requirementDialogVisible = true;
+            },
+            handleSizeChange(val) {
+                this.pagination.pageSize = val;
+                this.loadTestCases();
+            },
+            handleCurrentChange(val) {
+                this.pagination.currentPage = val;
+                this.loadTestCases();
+            },
+            addTestCase() {
+                this.testCaseForm = {
+                    associationType: 'requirement',
+                    requirementId: this.selectedRequirement ? this.selectedRequirement.id : null,
+                    bugId: null,
+                    title: '',
+                    priority: 'MEDIUM'
+                };
+                this.addTestCaseVisible = true;
+            },
+            async saveTestCase() {
+                try {
+                    await this.$refs.testCaseForm.validate();
+
+                    const testCaseData = {
+                        id: this.testCaseForm.id,
+                        title: this.testCaseForm.title,
+                        description: this.testCaseForm.description,
+                        priority: this.testCaseForm.priority,
+                        precondition: this.testCaseForm.precondition,
+                        steps: this.testCaseForm.steps,
+                        expectedResult: this.testCaseForm.expectedResult,
+                        requirementId: this.testCaseForm.requirementId,
+                        bugId: this.testCaseForm.bugId
+                    };
+
+                    const url = testCaseData.id ?
+                        `/api/test-cases/${testCaseData.id}` :
+                        '/api/test-cases';
+                    const method = testCaseData.id ? 'PUT' : 'POST';
+
+                    const response = await axios({
+                        method,
+                        url,
+                        data: testCaseData
+                    });
+
+                    this.$message.success(testCaseData.id ? '更新成功' : '创建成功');
+                    this.addTestCaseVisible = false;
+                    this.loadTestCases();
+
+                    if (testCaseData.requirementId) {
+                        this.loadRequirements();
+                    }
+                } catch (error) {
+                    this.$message.error('保存失败：' + (error.response?.data?.message || error.message));
+                }
+            },
+            formatDateTime(datetime) {
+                if (!datetime) return '-';
+
+                try {
+                    if (Array.isArray(datetime)) {
+                        const [year, month, day, hour, minute, second] = datetime;
+                        return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')} ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+                    }
+
+                    const date = new Date(datetime);
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const hours = String(date.getHours()).padStart(2, '0');
+                    const minutes = String(date.getMinutes()).padStart(2, '0');
+                    const seconds = String(date.getSeconds()).padStart(2, '0');
+
+                    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+                } catch (error) {
+                    console.error('日期格式化错误:', error);
+                    return datetime;
+                }
+            },
+            handleExecutionPlanFilter() {
+                this.executionPagination.currentPage = 1;
+                this.loadExecutionPlans();
+            },
+            async loadExecutionPlans() {
+                try {
+                    this.executionLoading = true;
+                    const params = new URLSearchParams({
+                        page: this.executionPagination.currentPage - 1,
+                        size: this.executionPagination.pageSize
+                    });
+
+                    if (this.executionPlanFilterForm.testCaseId) {
+                        params.append('testCaseId', this.executionPlanFilterForm.testCaseId);
+                    }
+                    if (this.executionPlanFilterForm.creatorName) {
+                        params.append('creatorName', this.executionPlanFilterForm.creatorName);
+                    }
+                    if (this.executionPlanFilterForm.executorName) {
+                        params.append('executorName', this.executionPlanFilterForm.executorName);
+                    }
+                    if (this.executionPlanFilterForm.status) {
+                        params.append('status', this.executionPlanFilterForm.status);
+                    }
+
+                    if (this.executionPlanFilterForm.testCaseTitle) {
+                        params.append('testCaseTitle', this.executionPlanFilterForm.testCaseTitle);
+                    }
+
+
+
+                    const response = await axios.get(`/api/execution-plans?${params}`);
+                    this.executionPlans = response.data.content;
+                    this.executionPagination.total = response.data.totalElements;
+                    
+                    // 更新统计数据
+                    this.updateStatisticsFromExecutionPlans();
+                } catch (error) {
+                    this.$message.error('加载执行计划失败：' + error.message);
+                } finally {
+                    this.executionLoading = false;
+                }
+            },
+            canEditRequirement(requirement) {
+                if (!requirement) return false;
+
+                if (this.currentUser && this.currentUser.isAdmin) return true;
+
+                if (this.currentUser && requirement.creatorId === this.currentUser.id) return true;
+
+                return false;
+            },
+            async deleteRequirement(requirement) {
+                try {
+                    const response = await axios.get(`/api/test-cases?requirementId=${requirement.id}`);
+                    const hasTestCases = response.data.content && response.data.content.length > 0;
+
+                    if (hasTestCases) {
+                        await this.$confirm(
+                            '该需求已关联测试用例，删除需求将同时删除所有关联的测试用例，是否继续？',
+                            '警告',
+                            {
+                                confirmButtonText: '确定删除',
+                                cancelButtonText: '取消',
+                                type: 'warning'
+                            }
+                        );
+                    } else {
+                        await this.$confirm('确认删除该需求?', '提示', {
+                            confirmButtonText: '确定',
+                            cancelButtonText: '取消',
+                            type: 'warning'
+                        });
+                    }
+
+                    await axios.delete(`/api/requirements/${requirement.id}`);
+
+                    this.$message.success('删除成功');
+                    this.loadRequirements();
+
+                    if (this.selectedRequirement && this.selectedRequirement.id === requirement.id) {
+                        this.selectedRequirement = null;
+                    }
+
+                } catch (error) {
+                    if (error !== 'cancel') {
+                        this.$message.error('删除失败：' + (error.response?.data?.message || error.message));
+                    }
+                }
+            },
+            editRequirement(requirement) {
+                this.requirementForm = {
+                    id: requirement.id,
+                    title: requirement.title,
+                    description: requirement.description,
+                    code:requirement.code,
+                    documentUrl: requirement.documentUrl || ''
+                };
+
+                this.requirementDialogTitle = '编辑需求';
+
+                this.requirementDialogVisible = true;
+            },
+            findNodeInTree(root, id) {
+                if (!root) return null;
+                if (root.id === id) return root;
+                if (root.children) {
+                    for (const child of root.children) {
+                        const found = this.findNodeInTree(child, id);
+                        if (found) return found;
+                    }
+                }
+                return null;
+            },
+            updateNodeInTree(root, updatedNode) {
+                if (!root) return false;
+                if (root.id === updatedNode.id) {
+                    Object.assign(root, updatedNode);
+                    return true;
+                }
+                if (root.children) {
+                    for (const child of root.children) {
+                        if (this.updateNodeInTree(child, updatedNode)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            },
+            viewNodeDetail(node) {
+                this.currentNode = {
+                    title: node.title || '',
+                    priority: node.priority || 'MEDIUM',
+                    precondition: node.precondition || '',
+                    steps: node.steps || '',
+                    expectedResult: node.expectedResult || '',
+                    type: node.type || 'case',
+                    parentId: node.parentId,
+                    children: node.children || []
+                };
+                this.viewDetailVisible = true;
+            },
+            async generateTestCasesForRequirement(requirement) {
+                try {
+                    // 设置生成状态
+                    this.$set(requirement, 'generating', true);
+
+                    // 调用后端API
+                    const response = await axios.post(
+                        `/api/requirements/${requirement.id}/generate-test-cases`
+                    );
+
+                    if (response.data.testCase) {
+                        this.$message.success('测试用例生成成功');
+                        // 刷新测试用例列表
+                        await this.loadTestCases();
+                    }
+                } catch (error) {
+                    let errorMessage = '生成测试用例失败';
+                    if (error.response && error.response.data && error.response.data.message) {
+                        errorMessage = error.response.data.message;
+                    }
+                    this.$message.error(errorMessage);
+                } finally {
+                    // 重置生成状态
+                    this.$set(requirement, 'generating', false);
+                }
+            },
+            async generateTestCasesForBug(bug) {
+                try {
+                    // 设置生成状态
+                    this.$set(bug, 'generating', true);
+
+                    // 调用后端API
+                    const response = await axios.post(
+                        `/api/bugs/${bug.id}/generate-test-cases`
+                    );
+
+                    if (response.data.testCase) {
+                        this.$message.success('测试用例生成成功');
+                        // 刷新测试用例列表
+                        await this.loadTestCases();
+                    }
+                } catch (error) {
+                    let errorMessage = '生成测试用例失败';
+                    if (error.response && error.response.data && error.response.data.message) {
+                        errorMessage = error.response.data.message;
+                    }
+                    this.$message.error(errorMessage);
+                } finally {
+                    // 重置生成状态
+                    this.$set(bug, 'generating', false);
+                }
+            },
+            getCompletedCasesCount(cases) {
+                if (!cases) return 0;
+                return cases.filter(c => c.status === 'COMPLETED').length;
+            },
+
+            executeCase(caseData) {
+                this.currentCase = caseData;
+                this.executeCaseForm = {
+                    actualResult: '',
+                    result: '',
+                    bugDescription: ''
+                };
+                this.executeCaseVisible = true;
+            },
+
+            async submitCaseExecution() {
+                try {
+                    if (!this.executeCaseForm.result) {
+                        this.$message.warning('请选择执行结果');
+                        return;
+                    }
+
+                    await axios.put(
+                        `/api/execution-plans/${this.currentExecution.id}/cases/${this.currentCase.id}`,
+                        this.executeCaseForm
+                    );
+
+                    // 更新当前用例状态
+                    this.currentCase.status = 'COMPLETED';
+                    this.currentCase.result = this.executeCaseForm.result;
+
+                    // 检查并更新执行计划状态
+                    await this.updateExecutionStatus(this.currentExecution);
+
+                    this.$message.success('执行结果已保存');
+                    this.executeCaseVisible = false;
+
+                    // 刷新执行计划详情
+                    await this.viewExecutionDetail(this.currentExecution);
+
+                    // 刷新执行计划列表
+                    await this.loadExecutionPlans();
+                } catch (error) {
+                    this.$message.error('保存执行结果失败：' + error.message);
+                }
+            },
+
+            viewCaseDetail(caseData) {
+                this.currentNode = {
+                    title: caseData.title || '',
+                    priority: caseData.priority || 'MEDIUM',
+                    precondition: caseData.precondition || '',
+                    steps: caseData.steps || '',
+                    expectedResult: caseData.expectedResult || '',
+                    type: caseData.type || 'case',
+                    parentId: caseData.parentId,
+                    children: caseData.children || []
+                };
+                this.viewDetailVisible = true;
+            },
+
+            calculateProgress(execution) {
+                if (!execution.cases || execution.cases.length === 0) return 0;
+                const testCases = execution.cases.filter(c => c.type === 'case');
+                if (testCases.length === 0) return 0;
+                const completedCases = testCases.filter(c => c.status === 'COMPLETED').length;
+
+                // 更新执行计划状态
+                if (completedCases === testCases.length) {
+                    execution.status = 'COMPLETED';
+                } else if (completedCases > 0) {
+                    execution.status = 'IN_PROGRESS';
+                }
+
+                return Math.round((completedCases / testCases.length) * 100);
+            },
+
+            // 添加新方法：检查执行计划是否已完成
+            isExecutionCompleted(execution) {
+                if (!execution.cases) return false;
+                const testCases = execution.cases.filter(c => c.type === 'case');
+                if (testCases.length === 0) return false;
+                return testCases.every(c => c.status === 'COMPLETED');
+            },
+
+            // 修改执行计划状态更新方法
+            async updateExecutionStatus(execution) {
+                try {
+                    const isCompleted = this.isExecutionCompleted(execution);
+                    const newStatus = isCompleted ? 'COMPLETED' : 'IN_PROGRESS';
+
+                    if (execution.status !== newStatus) {
+                        await axios.put(`/api/execution-plans/${execution.id}/status`, {
+                            status: newStatus
+                        });
+                        execution.status = newStatus;
+                    }
+                } catch (error) {
+                    console.error('更新执行计划状态失败:', error);
+                }
+            },
+
+            getStatusText(status) {
+                const statusMap = {
+                    'PENDING': '待执行',
+                    'IN_PROGRESS': '执行中',
+                    'COMPLETED': '已完成',
+                    'ABANDONED': '已废弃'
+                };
+                return statusMap[status] || status;
+            },
+
+            filterTestCases(cases) {
+                if (!cases) return [];
+                return cases.filter(c => c.type === 'case');
+            },
+
+            getTestCaseCount(cases) {
+                if (!cases) return 0;
+                return cases.filter(c => c.type === 'case').length;
+            },
+
+            getResultType(result) {
+                const types = {
+                    'PASS': 'success',
+                    'FAIL': 'danger',
+                    'BLOCKED': 'warning'
+                };
+                return types[result] || 'info';
+            },
+
+            getResultText(result) {
+                const texts = {
+                    'PASS': '通过',
+                    'FAIL': '失败',
+                    'BLOCKED': '阻塞'
+                };
+                return texts[result] || result;
+            },
+            canOperateExecution(execution) {
+                // 检查当前用户是否存在
+                if (!this.currentUser || !this.currentUser.roles) {
+                    return false;
+                }
+
+                // 检查是否是管理员
+                if (this.currentUser.roles.includes('管理员')) {
+                    return true;
+                }
+
+                // 检查是否是执行人
+                if (execution && this.currentUser.id === execution.executorId) {
+                    return true;
+                }
+
+                return false;
+            },
+            editExecutionPlan(execution) {
+                // 保存当前正在编辑的执行计划
+                this.currentExecution = execution;
+                // 设置表单数据
+                this.editExecutionPlanForm = {
+                    title: execution.title,
+                    executorId: execution.executorId
+                };
+
+                // 预加载执行人信息到选项中
+                if (execution.executorId && execution.executorName) {
+                    this.userOptions = [{
+                        id: execution.executorId,
+                        username: execution.executorName
+                    }];
+                }
+
+                this.editExecutionPlanVisible = true;
+            },
+            async saveExecutionPlan() {
+                try {
+                    if (!this.editExecutionPlanForm.title) {
+                        this.$message.warning('请输入计划标题');
+                        return;
+                    }
+                    if (!this.editExecutionPlanForm.executorId) {
+                        this.$message.warning('请选择执行人');
+                        return;
+                    }
+                    if (!this.currentExecution) {
+                        this.$message.error('未找到要编辑的执行计划');
+                        return;
+                    }
+
+                    const response = await axios.put(`/api/execution-plans/${this.currentExecution.id}`, {
+                        title: this.editExecutionPlanForm.title,
+                        executorId: this.editExecutionPlanForm.executorId
+                    });
+
+                    this.editExecutionPlanVisible = false;
+                    await this.loadExecutionPlans();
+                    this.$message.success('执行计划更新成功');
+                } catch (error) {
+                    console.error('更新执行计划失败:', error);
+                    this.$message.error('更新执行计划失败：' + (error.response?.data?.message || error.message));
+                }
+            },
+            async remoteSearchUsers(query) {
+                if (!query) {
+                    this.userOptions = [];
+                    return;
+                }
+                this.userSearchLoading = true;
+                try {
+                    const response = await axios.get('/api/users/search', { params: { query } });
+                    this.userOptions = response.data;
+                } catch (error) {
+                    this.$message.error('搜索用户失败：' + error.message);
+                } finally {
+                    this.userSearchLoading = false;
+                }
+            },
+            getScoreType(score) {
+                if (score >= 90) return 'success';
+                if (score >= 75) return 'warning';
+                if (score >= 60) return 'info';
+                return 'danger';
+            },
+            getPassedCaseCount(cases) {
+                return cases.filter(c => c.result === 'PASS').length;
+            },
+            getFailedCaseCount(cases) {
+                return cases.filter(c => c.result === 'FAIL').length;
+            },
+            getBlockedCaseCount(cases) {
+                return cases.filter(c => c.result === 'BLOCKED').length;
+            },
+            viewTestReport(execution) {
+                this.currentReport = execution;
+                this.testReportVisible = true;
+            },
+            updateStatisticsFromExecutionPlans() {
+                // 从执行计划列表中统计数据
+                const inProgressCount = this.executionPlans.filter(plan => plan.status === 'IN_PROGRESS').length;
+                const completedCount = this.executionPlans.filter(plan => plan.status === 'COMPLETED').length;
+                
+                // 更新统计数据
+                this.statistics.runningCases = inProgressCount;
+                this.statistics.completedCases = completedCount;
+            }
+        }
+    });
+</script>
+</body>
+</html>

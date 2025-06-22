@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Vue Test</title>
+    <style>
+        [v-cloak] {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" v-cloak>
+        <h1>{{ message }}</h1>
+        <p>Current time: {{ currentTime }}</p>
+    </div>
+
+    <script src="/lib/vue.min.js"></script>
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                message: 'Vue is working!',
+                currentTime: new Date().toLocaleString()
+            },
+            mounted() {
+                console.log('Vue instance mounted successfully');
+                this.updateTime();
+            },
+            methods: {
+                updateTime() {
+                    setInterval(() => {
+                        this.currentTime = new Date().toLocaleString();
+                    }, 1000);
+                }
+            }
+        });
+    </script>
+</body>
+</html> 

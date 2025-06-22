@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN" monitorInterval="30">
+    <Properties>
+        <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</Property>
+        <Property name="APP_LOG_ROOT">logs</Property>
+    </Properties>
+
+    <Appenders>
+        <!-- 控制台输出 -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+        </Console>
+
+        <!-- 应用日志 -->
+        <RollingFile name="appLog"
+                     fileName="${APP_LOG_ROOT}/application.log"
+                     filePattern="${APP_LOG_ROOT}/application-%d{yyyy-MM-dd}-%i.log">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy>
+                <Delete basePath="${APP_LOG_ROOT}" maxDepth="1">
+                    <IfFileName glob="application-*.log"/>
+                    <IfLastModified age="30d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+
+        <!-- 错误日志 -->
+        <RollingFile name="errorLog"
+                     fileName="${APP_LOG_ROOT}/error.log"
+                     filePattern="${APP_LOG_ROOT}/error-%d{yyyy-MM-dd}-%i.log">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy>
+                <Delete basePath="${APP_LOG_ROOT}" maxDepth="1">
+                    <IfFileName glob="error-*.log"/>
+                    <IfLastModified age="30d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+
+        <!-- SQL日志 -->
+        <RollingFile name="sqlLog"
+                     fileName="${APP_LOG_ROOT}/sql.log"
+                     filePattern="${APP_LOG_ROOT}/sql-%d{yyyy-MM-dd}-%i.log">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy>
+                <Delete basePath="${APP_LOG_ROOT}" maxDepth="1">
+                    <IfFileName glob="sql-*.log"/>
+                    <IfLastModified age="30d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+
+        <!-- 异步日志配置 -->
+        <Async name="AsyncAppLog" bufferSize="512">
+            <AppenderRef ref="appLog"/>
+        </Async>
+        <Async name="AsyncErrorLog" bufferSize="512">
+            <AppenderRef ref="errorLog"/>
+        </Async>
+        <Async name="AsyncSqlLog" bufferSize="512">
+            <AppenderRef ref="sqlLog"/>
+        </Async>
+    </Appenders>
+
+    <Loggers>
+        <!-- SQL日志 -->
+        <Logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
+            <AppenderRef ref="AsyncSqlLog"/>
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE" additivity="false">
+            <AppenderRef ref="AsyncSqlLog"/>
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <!-- Spring日志 -->
+        <Logger name="org.springframework" level="INFO" additivity="false">
+            <AppenderRef ref="AsyncAppLog"/>
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <!-- 应用日志 -->
+        <Logger name="com.unionhole.zsguardian" level="INFO" additivity="false">
+            <AppenderRef ref="AsyncAppLog"/>
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <!-- 错误日志 -->
+        <Logger name="error" level="ERROR" additivity="false">
+            <AppenderRef ref="AsyncErrorLog"/>
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <!-- Root Logger -->
+        <Root level="INFO">
+            <AppenderRef ref="AsyncAppLog"/>
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="AsyncErrorLog"/>
+        </Root>
+    </Loggers>
+</Configuration> 

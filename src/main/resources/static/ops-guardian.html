@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZSGuardian-AI赋能研发管理守护系统</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <script src="/js/common.js"></script>
+    <script src="/js/iframe-redirect.js"></script>
+    <link rel="stylesheet" href="/lib/element-ui.css">
+    <script src="/lib/vue.min.js"></script>
+    <script src="/lib/element-ui.min.js"></script>
+    <script src="/lib/vis-network.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f5f7fa;
+        }
+        .app-container {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+        }
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .topology-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+            height: 600px;
+        }
+        .network-container {
+            height: 100%;
+            border: 1px solid #ebeef5;
+            border-radius: 4px;
+        }
+        .chat-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            height: 600px;
+        }
+        .chat-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px solid #ebeef5;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .user-message {
+            background-color: #e3f2fd;
+            margin-left: 20px;
+        }
+        .ai-message {
+            background-color: #f5f5f5;
+            margin-right: 20px;
+        }
+        .upload-area {
+            border: 2px dashed #409EFF;
+            border-radius: 6px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .service-list {
+            margin-top: 20px;
+        }
+        .metrics-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .metric-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #409EFF;
+        }
+    </style>
+</head>
+<body>
+<div id="app" class="app-container">
+    <div class="header">
+        <h2>运维守护系统</h2>
+        <p>智能运维分析与故障排查平台</p>
+    </div>
+
+    <div class="metrics-container">
+        <div class="metric-card">
+            <h3>服务健康度</h3>
+            <div class="metric-value">98.5%</div>
+        </div>
+        <div class="metric-card">
+            <h3>在线服务数</h3>
+            <div class="metric-value">42</div>
+        </div>
+        <div class="metric-card">
+            <h3>告警数量</h3>
+            <div class="metric-value">3</div>
+        </div>
+        <div class="metric-card">
+            <h3>平均响应时间</h3>
+            <div class="metric-value">187ms</div>
+        </div>
+    </div>
+
+    <el-tabs v-model="activeTab" type="border-card">
+        <el-tab-pane label="架构拓扑" name="topology">
+            <div class="main-content">
+                <div class="topology-container">
+                    <el-row :gutter="20" style="margin-bottom: 20px">
+                        <el-col :span="24">
+                            <div class="upload-area">
+                                <el-upload
+                                        action="#"
+                                        :auto-upload="false"
+                                        :on-change="handleFileChange"
+                                        drag>
+                                    <i class="el-icon-upload"></i>
+                                    <div class="el-upload__text">拖拽文件到此处或 <em>点击上传</em></div>
+                                    <div class="el-upload__tip" slot="tip">支持上传架构拓扑文档或复盘文档</div>
+                                </el-upload>
+                            </div>
+                        </el-col>
+                    </el-row>
+                    <div id="network" class="network-container"></div>
+                </div>
+                <div class="chat-container">
+                    <h3>智能运维助手</h3>
+                    <div class="chat-messages" ref="chatMessages">
+                        <div v-for="(message, index) in messages"
+                             :key="index"
+                             :class="['message', message.type === 'user' ? 'user-message' : 'ai-message']">
+                            {{ message.content }}
+                        </div>
+                    </div>
+                    <el-input
+                            type="textarea"
+                            :rows="4"
+                            placeholder="请输入故障现象或错误信息..."
+                            v-model="userInput"
+                            style="margin-bottom: 10px">
+                    </el-input>
+                    <el-button type="primary" @click="sendMessage" :loading="sending">发送</el-button>
+                </div>
+            </div>
+        </el-tab-pane>
+        <el-tab-pane label="服务管理" name="services">
+            <el-table :data="services" style="width: 100%">
+                <el-table-column prop="name" label="服务名称"></el-table-column>
+                <el-table-column prop="host" label="部署主机"></el-table-column>
+                <el-table-column prop="status" label="状态">
+                    <template slot-scope="scope">
+                        <el-tag :type="scope.row.status === 'running' ? 'success' : 'danger'">
+                            {{ scope.row.status === 'running' ? '运行中' : '异常' }}
+                        </el-tag>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="cpu" label="CPU使用率"></el-table-column>
+                <el-table-column prop="memory" label="内存使用率"></el-table-column>
+                <el-table-column label="操作">
+                    <template slot-scope="scope">
+                        <el-button size="mini" @click="handleView(scope.row)">查看</el-button>
+                        <el-button size="mini" type="primary" @click="handleRestart(scope.row)">重启</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </el-tab-pane>
+    </el-tabs>
+</div>
+
+<script>
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                activeTab: 'topology',
+                userInput: '',
+                sending: false,
+                messages: [
+                    {
+                        type: 'ai',
+                        content: '您好！我是轻帆云的专属运维专家。我可以协助您进行系统架构分析、性能优化和故障排查。请描述您遇到的问题，我会基于最佳实践为您提供专业建议。'
+                    }
+                ],
+                services: [
+                    {
+                        name: 'user-service',
+                        host: '192.168.1.100',
+                        status: 'running',
+                        cpu: '45%',
+                        memory: '60%'
+                    },
+                    {
+                        name: 'order-service',
+                        host: '192.168.1.101',
+                        status: 'running',
+                        cpu: '35%',
+                        memory: '55%'
+                    },
+                    {
+                        name: 'payment-service',
+                        host: '192.168.1.102',
+                        status: 'error',
+                        cpu: '90%',
+                        memory: '85%'
+                    }
+                ]
+            }
+        },
+        mounted() {
+            checkLogin().then(loggedIn => {
+                if (loggedIn) {
+                    this.initNetwork();
+                    this.loadServices();
+                }
+            });
+        },
+        methods: {
+            initNetwork() {
+                const container = document.getElementById('network');
+                const nodes = new vis.DataSet([
+                    { id: 1, label: 'gateway', group: 'gateway', title: 'API网关\n状态: 正常\n负载: 45%' },
+                    { id: 2, label: 'douc', group: 'service', title: '用户中心服务\n状态: 正常\n负载: 35%' },
+                    { id: 3, label: 'dosm', group: 'service', title: '服务管理中心\n状态: 正常\n负载: 40%' },
+                    { id: 4, label: 'wisebot', group: 'service', title: '智能机器人服务\n状态: 警告\n负载: 85%' },
+                    { id: 5, label: 'dodi', group: 'database', title: '分布式数据库\n状态: 正常\n负载: 55%' },
+                    { id: 6, label: 'Redis', group: 'cache', title: '缓存集群\n状态: 正常\n内存使用: 65%' },
+                    { id: 7, label: 'MQ', group: 'mq', title: '消息队列集群\n状态: 正常\n队列积压: 12' },
+                    { id: 8, label: 'ES', group: 'search', title: '搜索引擎集群\n状态: 正常\n索引状态: Green' }
+                ]);
+
+                const edges = new vis.DataSet([
+                    { from: 1, to: 2, arrows: 'to', label: 'HTTP', color: { color: '#2B7CE9' }, length: 200 },
+                    { from: 1, to: 3, arrows: 'to', label: 'HTTP', color: { color: '#2B7CE9' }, length: 200 },
+                    { from: 1, to: 4, arrows: 'to', label: 'HTTP', color: { color: '#2B7CE9' }, length: 200 },
+                    { from: 2, to: 5, arrows: 'to', label: 'TCP', color: { color: '#FF9800' }, length: 200 },
+                    { from: 3, to: 5, arrows: 'to', label: 'TCP', color: { color: '#FF9800' }, length: 200 },
+                    { from: 4, to: 5, arrows: 'to', label: 'TCP', color: { color: '#FF9800' }, length: 200 },
+                    { from: 2, to: 6, arrows: 'to', dashes: true, label: 'Cache', length: 200 },
+                    { from: 3, to: 6, arrows: 'to', dashes: true, label: 'Cache', length: 200 },
+                    { from: 2, to: 7, arrows: 'to', dashes: true, label: 'Pub/Sub', length: 200 },
+                    { from: 4, to: 8, arrows: 'to', label: 'Search', color: { color: '#4CAF50' }, length: 200 }
+                ]);
+
+                const options = {
+                    nodes: {
+                        shape: 'dot',
+                        size: 30,
+                        font: {
+                            size: 14,
+                            face: 'Tahoma'
+                        },
+                        borderWidth: 2,
+                        shadow: true,
+                        scaling: {
+                            min: 20,
+                            max: 40
+                        }
+                    },
+                    edges: {
+                        width: 2,
+                        shadow: true,
+                        smooth: {
+                            type: 'continuous',
+                            roundness: 0.5
+                        },
+                        font: {
+                            size: 12,
+                            align: 'middle'
+                        }
+                    },
+                    groups: {
+                        gateway: {
+                            color: { background: '#ff7043', border: '#f4511e' },
+                            shape: 'diamond'
+                        },
+                        service: {
+                            color: { background: '#42a5f5', border: '#1e88e5' },
+                            shape: 'dot'
+                        },
+                        database: {
+                            color: { background: '#66bb6a', border: '#43a047' },
+                            shape: 'database'
+                        },
+                        cache: {
+                            color: { background: '#ec407a', border: '#d81b60' },
+                            shape: 'hexagon'
+                        },
+                        mq: {
+                            color: { background: '#ab47bc', border: '#8e24aa' },
+                            shape: 'square'
+                        },
+                        search: {
+                            color: { background: '#ffd54f', border: '#ffc107' },
+                            shape: 'triangle'
+                        }
+                    },
+                    physics: {
+                        enabled: true,
+                        barnesHut: {
+                            gravitationalConstant: -2000,
+                            centralGravity: 0.3,
+                            springLength: 200,
+                            springConstant: 0.04,
+                            damping: 0.09
+                        }
+                    },
+                    interaction: {
+                        hover: true,
+                        tooltipDelay: 200,
+                        hideEdgesOnDrag: true,
+                        navigationButtons: true,
+                        keyboard: true,
+                        zoomView: true
+                    }
+                };
+
+                const network = new vis.Network(container, { nodes, edges }, options);
+
+                // 添加事件监听
+                network.on("click", function (params) {
+                    if (params.nodes.length > 0) {
+                        const nodeId = params.nodes[0];
+                        const node = nodes.get(nodeId);
+                        this.$message({
+                            message: `服务节点: ${node.label}\n${node.title}`,
+                            type: 'info',
+                            duration: 3000
+                        });
+                    }
+                }.bind(this));
+
+                // 添加动态效果
+                network.on("stabilizationProgress", function(params) {
+                    // 可以在这里添加加载进度条
+                });
+
+                network.on("stabilizationIterationsDone", function() {
+                    // 布局稳定后的回调
+                    this.$message.success('系统拓扑图加载完成');
+                }.bind(this));
+
+                // 定期更新节点状态
+                setInterval(() => {
+                    const nodeIds = nodes.getIds();
+                    nodeIds.forEach(id => {
+                        const node = nodes.get(id);
+                        // 模拟更新节点状态
+                        const load = Math.floor(Math.random() * 40) + 30;
+                        node.title = `${node.label}\n状态: 正常\n负载: ${load}%`;
+                        nodes.update(node);
+                    });
+                }, 5000);
+            },
+            handleFileChange(file) {
+                this.$message.success('文档上传成功，正在分析...');
+            },
+            sendMessage() {
+                if (!this.userInput.trim()) return;
+
+                this.messages.push({
+                    type: 'user',
+                    content: this.userInput
+                });
+
+                this.sending = true;
+                setTimeout(() => {
+                    this.messages.push({
+                        type: 'ai',
+                        content: '我是轻帆云的专属运维专家，根据您描述的问题，我建议从以下几个维度进行排查：\n1. 服务器负载情况（CPU、内存、磁盘IO）\n2. 网络连接状态（网络延迟、丢包率）\n3. 系统日志分析（Error级别日志、异常堆栈）\n\n需要我为您深入分析某个具体方面吗？我可以提供更详细的诊断方案。'
+                    });
+                    this.sending = false;
+                    this.userInput = '';
+                    this.$nextTick(() => {
+                        const container = this.$refs.chatMessages;
+                        container.scrollTop = container.scrollHeight;
+                    });
+                }, 1000);
+            },
+            handleView(row) {
+                this.$message.info('查看服务详情：' + row.name);
+            },
+            handleRestart(row) {
+                this.$confirm('确定要重启该服务吗？', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    this.$message.success('服务重启指令已发送');
+                }).catch(() => {
+                    this.$message.info('已取消重启');
+                });
+            }
+        }
+    });
+</script>
+</body>
+</html>

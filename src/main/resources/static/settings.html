@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>系统设置 - ZSGuardian</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    
+    <!-- 引入iframe重定向脚本 -->
+    <script src="/js/iframe-redirect.js"></script>
+    
+    <link rel="stylesheet" href="/lib/element-ui.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7fa;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        
+        .settings-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        
+        .settings-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f2f5;
+        }
+        
+        .settings-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0 0 10px 0;
+        }
+        
+        .settings-subtitle {
+            font-size: 16px;
+            color: #606266;
+            margin: 0;
+        }
+        
+        .settings-section {
+            margin-bottom: 40px;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e4e7ed;
+        }
+        
+        .setting-item {
+            margin-bottom: 25px;
+            padding: 20px;
+            border: 1px solid #e4e7ed;
+            border-radius: 6px;
+            background: #fafafa;
+        }
+        
+        .setting-label {
+            font-size: 16px;
+            font-weight: 500;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .setting-description {
+            font-size: 14px;
+            color: #606266;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        
+        .setting-control {
+            margin-top: 10px;
+        }
+        
+        .back-button {
+            margin-bottom: 20px;
+        }
+        
+        .save-button {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-active {
+            background-color: #67c23a;
+        }
+        
+        .status-inactive {
+            background-color: #f56c6c;
+        }
+        
+        .status-warning {
+            background-color: #e6a23c;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="settings-container">
+            <!-- 返回按钮 -->
+            <div class="back-button">
+                <el-button @click="goBack" icon="el-icon-arrow-left">返回</el-button>
+            </div>
+            
+            <!-- 设置头部 -->
+            <div class="settings-header">
+                <h1 class="settings-title">系统设置</h1>
+                <p class="settings-subtitle">配置系统参数和功能选项</p>
+            </div>
+            
+            <!-- 系统配置 -->
+            <div class="settings-section">
+                <h2 class="section-title">系统配置</h2>
+                
+                <div class="setting-item">
+                    <div class="setting-label">系统名称</div>
+                    <div class="setting-description">设置系统显示名称</div>
+                    <div class="setting-control">
+                        <el-input v-model="settings.systemName" placeholder="请输入系统名称"></el-input>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-label">系统版本</div>
+                    <div class="setting-description">当前系统版本信息</div>
+                    <div class="setting-control">
+                        <el-input v-model="settings.systemVersion" disabled></el-input>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-label">时区设置</div>
+                    <div class="setting-description">设置系统时区</div>
+                    <div class="setting-control">
+                        <el-select v-model="settings.timezone" placeholder="请选择时区">
+                            <el-option label="UTC+8 (北京时间)" value="Asia/Shanghai"></el-option>
+                            <el-option label="UTC+0 (格林威治时间)" value="UTC"></el-option>
+                            <el-option label="UTC-5 (美国东部时间)" value="America/New_York"></el-option>
+                        </el-select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 功能开关 -->
+            <div class="settings-section">
+                <h2 class="section-title">功能开关</h2>
+                
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="status-indicator" :class="settings.features.aiAnalysis ? 'status-active' : 'status-inactive'"></span>
+                        AI 分析功能
+                    </div>
+                    <div class="setting-description">启用或禁用 AI 智能分析功能</div>
+                    <div class="setting-control">
+                        <el-switch v-model="settings.features.aiAnalysis"></el-switch>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="status-indicator" :class="settings.features.autoTest ? 'status-active' : 'status-inactive'"></span>
+                        自动化测试
+                    </div>
+                    <div class="setting-description">启用或禁用自动化测试功能</div>
+                    <div class="setting-control">
+                        <el-switch v-model="settings.features.autoTest"></el-switch>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="status-indicator" :class="settings.features.codeReview ? 'status-active' : 'status-inactive'"></span>
+                        代码审查
+                    </div>
+                    <div class="setting-description">启用或禁用代码审查功能</div>
+                    <div class="setting-control">
+                        <el-switch v-model="settings.features.codeReview"></el-switch>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="status-indicator" :class="settings.features.monitoring ? 'status-active' : 'status-inactive'"></span>
+                        系统监控
+                    </div>
+                    <div class="setting-description">启用或禁用系统监控功能</div>
+                    <div class="setting-control">
+                        <el-switch v-model="settings.features.monitoring"></el-switch>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 通知设置 -->
+            <div class="settings-section">
+                <h2 class="section-title">通知设置</h2>
+                
+                <div class="setting-item">
+                    <div class="setting-label">邮件通知</div>
+                    <div class="setting-description">配置邮件通知设置</div>
+                    <div class="setting-control">
+                        <el-switch v-model="settings.notifications.email"></el-switch>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-label">短信通知</div>
+                    <div class="setting-description">配置短信通知设置</div>
+                    <div class="setting-control">
+                        <el-switch v-model="settings.notifications.sms"></el-switch>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-label">Webhook 通知</div>
+                    <div class="setting-description">配置 Webhook 通知地址</div>
+                    <div class="setting-control">
+                        <el-input v-model="settings.notifications.webhook" placeholder="请输入 Webhook URL"></el-input>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 安全设置 -->
+            <div class="settings-section">
+                <h2 class="section-title">安全设置</h2>
+                
+                <div class="setting-item">
+                    <div class="setting-label">密码策略</div>
+                    <div class="setting-description">设置密码复杂度要求</div>
+                    <div class="setting-control">
+                        <el-select v-model="settings.security.passwordPolicy" placeholder="请选择密码策略">
+                            <el-option label="低 (6位以上)" value="low"></el-option>
+                            <el-option label="中 (8位以上，包含字母和数字)" value="medium"></el-option>
+                            <el-option label="高 (10位以上，包含大小写字母、数字和特殊字符)" value="high"></el-option>
+                        </el-select>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-label">会话超时</div>
+                    <div class="setting-description">设置用户会话超时时间（分钟）</div>
+                    <div class="setting-control">
+                        <el-input-number v-model="settings.security.sessionTimeout" :min="5" :max="1440"></el-input-number>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-label">登录失败锁定</div>
+                    <div class="setting-description">设置登录失败次数限制</div>
+                    <div class="setting-control">
+                        <el-input-number v-model="settings.security.loginAttempts" :min="3" :max="10"></el-input-number>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 保存按钮 -->
+            <div class="save-button">
+                <el-button type="primary" @click="saveSettings" :loading="saving" size="large">
+                    保存设置
+                </el-button>
+                <el-button @click="resetSettings" size="large">重置</el-button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/lib/vue.min.js"></script>
+    <script src="/lib/element-ui.min.js"></script>
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                saving: false,
+                settings: {
+                    systemName: 'ZSGuardian-AI赋能研发管理守护系统',
+                    systemVersion: 'v1.0.0',
+                    timezone: 'Asia/Shanghai',
+                    features: {
+                        aiAnalysis: true,
+                        autoTest: true,
+                        codeReview: true,
+                        monitoring: true
+                    },
+                    notifications: {
+                        email: true,
+                        sms: false,
+                        webhook: ''
+                    },
+                    security: {
+                        passwordPolicy: 'medium',
+                        sessionTimeout: 30,
+                        loginAttempts: 5
+                    }
+                }
+            },
+            methods: {
+                goBack() {
+                    // 发送消息给父窗口，请求切换菜单
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({
+                            type: 'switchMenu',
+                            menu: 'dashboard'
+                        }, '*');
+                    } else {
+                        window.location.href = '/index.html';
+                    }
+                },
+                
+                async saveSettings() {
+                    this.saving = true;
+                    try {
+                        // 模拟保存设置
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        
+                        this.$message({
+                            type: 'success',
+                            message: '设置保存成功'
+                        });
+                    } catch (error) {
+                        this.$message.error('设置保存失败：' + error.message);
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+                
+                resetSettings() {
+                    this.$confirm('确定要重置所有设置吗？', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(() => {
+                        // 重置为默认值
+                        this.settings = {
+                            systemName: 'ZSGuardian-AI赋能研发管理守护系统',
+                            systemVersion: 'v1.0.0',
+                            timezone: 'Asia/Shanghai',
+                            features: {
+                                aiAnalysis: true,
+                                autoTest: true,
+                                codeReview: true,
+                                monitoring: true
+                            },
+                            notifications: {
+                                email: true,
+                                sms: false,
+                                webhook: ''
+                            },
+                            security: {
+                                passwordPolicy: 'medium',
+                                sessionTimeout: 30,
+                                loginAttempts: 5
+                            }
+                        };
+                        
+                        this.$message({
+                            type: 'success',
+                            message: '设置已重置'
+                        });
+                    });
+                }
+            },
+            mounted() {
+                // 加载设置
+                const savedSettings = localStorage.getItem('systemSettings');
+                if (savedSettings) {
+                    try {
+                        this.settings = { ...this.settings, ...JSON.parse(savedSettings) };
+                    } catch (e) {
+                        console.error('加载设置失败:', e);
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html> 

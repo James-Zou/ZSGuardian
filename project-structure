@@ -1,0 +1,15 @@
+project-root/
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── com/
+│   │   │       └── unionhole/
+│   │   │           └── zsguardian/
+│   │   │               ├── controller/
+│   │   │               ├── service/
+│   │   │               ├── model/
+│   │   │               └── config/
+│   │   └── resources/
+│   │       ├── static/
+│   │       └── templates/
+└── pom.xml 

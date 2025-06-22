@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ZSGuardian-AI赋能研发管理守护系统</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <script src="/js/common.js"></script>
+    <script src="/js/iframe-redirect.js"></script>
+    <link rel="stylesheet" href="/lib/element-ui.css">
+    <style>
+        /* 复用现有样式 */
+    </style>
+</head>
+<body>
+<div id="app">
+    <el-container>
+        <el-main>
+            <el-card>
+                <div slot="header">
+                    <span>用户管理</span>
+                </div>
+                <el-table :data="users.content || []" style="width: 100%">
+                    <el-table-column prop="username" label="用户名"></el-table-column>
+                    <el-table-column prop="email" label="邮箱"></el-table-column>
+                    <el-table-column prop="phone" label="手机号"></el-table-column>
+                    <el-table-column prop="enabled" label="状态">
+                        <template slot-scope="scope">
+                            <el-tag :type="scope.row.enabled ? 'success' : 'danger'">
+                                {{ scope.row.enabled ? '启用' : '禁用' }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" width="200">
+                        <template slot-scope="scope">
+                            <el-button
+                                    size="mini"
+                                    :type="scope.row.enabled ? 'danger' : 'success'"
+                                    @click="handleStatusChange(scope.row)">
+                                {{ scope.row.enabled ? '禁用' : '启用' }}
+                            </el-button>
+                            <el-button
+                                    size="mini"
+                                    type="primary"
+                                    @click="handleResetPassword(scope.row)">
+                                重置密码
+                            </el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+
+                <div class="pagination-container" style="margin-top: 20px; text-align: right;">
+                    <el-pagination
+                            @size-change="handleSizeChange"
+                            @current-change="handleCurrentChange"
+                            :current-page="currentPage"
+                            :page-sizes="[10, 20, 50, 100]"
+                            :page-size="pageSize"
+                            layout="total, sizes, prev, pager, next, jumper"
+                            :total="users.totalElements || 0">
+                    </el-pagination>
+                </div>
+            </el-card>
+        </el-main>
+    </el-container>
+
+    <!-- 重置密码对话框 -->
+    <el-dialog title="重置密码" :visible.sync="dialogVisible">
+        <el-form :model="passwordForm" :rules="passwordRules" ref="passwordForm">
+            <el-form-item label="新密码" prop="password">
+                <el-input v-model="passwordForm.password" type="password"></el-input>
+            </el-form-item>
+            <el-form-item label="确认密码" prop="confirmPassword">
+                <el-input v-model="passwordForm.confirmPassword" type="password"></el-input>
+            </el-form-item>
+        </el-form>
+        <div slot="footer">
+            <el-button @click="dialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="confirmResetPassword">确定</el-button>
+        </div>
+    </el-dialog>
+
+    <!-- 管理员验证对话框 -->
+    <el-dialog title="管理员验证" :visible.sync="adminCheckVisible" width="30%" :close-on-click-modal="false">
+        <el-form :model="adminForm" ref="adminForm">
+            <el-form-item label="管理员密码" prop="password">
+                <el-input v-model="adminForm.password" type="password" show-password></el-input>
+            </el-form-item>
+        </el-form>
+        <div slot="footer">
+            <el-button @click="skipAdminCheck">跳过</el-button>
+            <el-button type="primary" @click="verifyAdmin">确定</el-button>
+        </div>
+    </el-dialog>
+</div>
+
+<script src="/lib/vue.min.js"></script>
+<script src="/lib/element-ui.min.js"></script>
+<script src="/lib/crypto-js.min.js"></script>
+<script>
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                users: {
+                    content: [],
+                    totalElements: 0
+                },
+                currentPage: 1,
+                pageSize: 10,
+                dialogVisible: false,
+                currentUser: null,
+                passwordForm: {
+                    password: '',
+                    confirmPassword: ''
+                },
+                passwordRules: {
+                    password: [
+                        { required: true, message: '请输入密码', trigger: 'blur' },
+                        { min: 6, message: '密码长度不能小于6位', trigger: 'blur' }
+                    ],
+                    confirmPassword: [
+                        { required: true, message: '请确认密码', trigger: 'blur' },
+                        {
+                            validator: (rule, value, callback) => {
+                                if (value !== this.passwordForm.password) {
+                                    callback(new Error('两次输入密码不一致'));
+                                } else {
+                                    callback();
+                                }
+                            },
+                            trigger: 'blur'
+                        }
+                    ]
+                },
+                adminCheckVisible: false,
+                adminForm: {
+                    password: ''
+                }
+            }
+        },
+        created() {
+            this.fetchUsers();
+        },
+        methods: {
+            async fetchUsers() {
+                try {
+                    const response = await fetch(`/api/users?page=${this.currentPage - 1}&size=${this.pageSize}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.users = data;
+                    } else {
+                        throw new Error('获取用户列表失败');
+                    }
+                } catch (error) {
+                    this.$message.error(error.message);
+                }
+            },
+
+            async handleStatusChange(user) {
+                try {
+                    const response = await fetch(`/api/users/${user.id}/status?enabled=${!user.enabled}`, {
+                        method: 'PUT'
+                    });
+                    if (!response.ok) throw new Error('更新用户状态失败');
+                    this.$message.success('更新成功');
+                    await this.fetchUsers();
+                } catch (error) {
+                    this.$message.error(error.message);
+                }
+            },
+
+            handleResetPassword(user) {
+                this.currentUser = user;
+                this.dialogVisible = true;
+                this.passwordForm.password = '';
+                this.passwordForm.confirmPassword = '';
+            },
+
+            async confirmResetPassword() {
+                try {
+                    await this.$refs.passwordForm.validate();
+                    const response = await fetch(`/api/users/${this.currentUser.id}/password`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            password: CryptoJS.MD5(this.passwordForm.password).toString()
+                        })
+                    });
+                    if (!response.ok) throw new Error('重置密码失败');
+                    this.$message.success('密码重置成功');
+                    this.dialogVisible = false;
+                } catch (error) {
+                    this.$message.error(error.message);
+                }
+            },
+
+            async checkAdminStatus() {
+                const adminStatus = this.getCookie('adminstatus');
+                if (adminStatus !== '1') {
+                    this.adminCheckVisible = true;
+                }
+            },
+
+            async verifyAdmin() {
+                try {
+                    const response = await fetch('/api/admin/verify', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            password: CryptoJS.MD5(this.adminForm.password).toString()
+                        })
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        // 设置cookie，有效期1天
+                        const expires = new Date();
+                        expires.setDate(expires.getDate() + 1);
+                        document.cookie = `adminstatus=1;expires=${expires.toUTCString()};path=/`;
+                        this.adminCheckVisible = false;
+                        this.$message.success('验证成功');
+                    } else {
+                        this.$message.error('密码验证失败');
+                        // 重定向到首页或其他页面
+                        setTimeout(() => {
+                            window.location.href = '/index.html';
+                        }, 1500);
+                    }
+                } catch (error) {
+                    this.$message.error('验证失败：' + error.message);
+                    setTimeout(() => {
+                        window.location.href = '/index.html';
+                    }, 1500);
+                }
+            },
+
+            skipAdminCheck() {
+                this.$message.error('需要管理员权限');
+                setTimeout(() => {
+                    window.location.href = '/index.html';
+                }, 1500);
+            },
+
+            getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+                return '';
+            },
+
+            handleSizeChange(val) {
+                this.pageSize = val;
+                this.fetchUsers();
+            },
+
+            handleCurrentChange(val) {
+                this.currentPage = val;
+                this.fetchUsers();
+            }
+        },
+        mounted() {
+            checkLogin().then(loggedIn => {
+                if (loggedIn) {
+                    this.checkAdminStatus();
+                    this.fetchUsers();
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>

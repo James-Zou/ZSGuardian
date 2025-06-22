@@ -1,0 +1,51 @@
+.footer {
+    text-align: center;
+    padding: 20px 0;
+    color: #666;
+    font-size: 14px;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    border-top: 1px solid #eee;
+    z-index: 1000;
+}
+
+.footer-spacer {
+    height: 60px; /* 与footer高度相同，防止内容被遮挡 */
+}
+
+/* 当页面内容较多时，footer不固定 */
+@media (max-height: 600px) {
+    .footer {
+        position: relative;
+    }
+    .footer-spacer {
+        display: none;
+    }
+}
+
+.footer-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.footer-divider {
+    color: #ddd;
+}
+
+/* 鼠标悬停效果 */
+.footer span {
+    transition: color 0.3s ease;
+}
+
+.footer span:hover {
+    color: #409EFF;
+}
+
+/* 为了防止内容被页脚遮挡 */
+.container {
+    padding-bottom: 80px;
+} 

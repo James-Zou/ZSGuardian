@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>系统概览</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    
+    <!-- 引入iframe重定向脚本 -->
+    <script src="/js/iframe-redirect.js"></script>
+    
+    <link rel="stylesheet" href="/lib/element-ui.css">
+    <script src="/lib/vue.min.js"></script>
+    <script src="/lib/element-ui.min.js"></script>
+    <script src="/lib/axios.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7fa;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .page-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .page-title {
+            font-size: 32px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0 0 10px 0;
+        }
+        
+        .page-subtitle {
+            font-size: 16px;
+            color: #606266;
+            margin: 0;
+        }
+        
+        /* 打字特效样式 */
+        .typing-container {
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+        
+        .typing-text {
+            font-size: 16px;
+            color: #606266;
+            opacity: 0;
+            transition: all 0.5s ease;
+            font-weight: 400;
+            letter-spacing: 1px;
+            position: relative;
+            padding: 0 20px;
+        }
+        
+        .typing-text.active {
+            opacity: 1;
+        }
+        
+        .typing-text::before,
+        .typing-text::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 30px;
+            height: 1px;
+            background: #dcdfe6;
+            transform: translateY(-50%);
+        }
+        
+        .typing-text::before {
+            left: -20px;
+        }
+        
+        .typing-text::after {
+            right: -20px;
+        }
+        
+        /* 添加打字光标效果 */
+        .typing-text.active::after {
+            content: '|';
+            animation: blink 1s infinite;
+            color: #409EFF;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        
+        /* 四大守护模块卡片 */
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 24px;
+            text-align: center;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, #409EFF, #67C23A);
+            border-radius: 2px;
+        }
+
+        .module-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            height: 180px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .module-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #409EFF, #67C23A);
+        }
+
+        .module-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .module-card.code-guardian::before {
+            background: linear-gradient(90deg, #409EFF, #36cfc9);
+        }
+
+        .module-card.test-guardian::before {
+            background: linear-gradient(90deg, #fa8c16, #fa541c);
+        }
+
+        .module-card.review-guardian::before {
+            background: linear-gradient(90deg, #722ed1, #eb2f96);
+        }
+
+        .module-card.ops-guardian::before {
+            background: linear-gradient(90deg, #52c41a, #13c2c2);
+        }
+
+        .module-icon {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .module-icon i {
+            font-size: 48px;
+            color: #409EFF;
+        }
+
+        .module-card.code-guardian .module-icon i {
+            color: #409EFF;
+        }
+
+        .module-card.test-guardian .module-icon i {
+            color: #fa8c16;
+        }
+
+        .module-card.review-guardian .module-icon i {
+            color: #722ed1;
+        }
+
+        .module-card.ops-guardian .module-icon i {
+            color: #52c41a;
+        }
+
+        .module-content {
+            flex: 1;
+        }
+
+        .module-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0 0 8px 0;
+            text-align: center;
+        }
+
+        .module-desc {
+            font-size: 14px;
+            color: #606266;
+            margin: 0 0 16px 0;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .module-stats {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: #909399;
+        }
+
+        .stat-item i {
+            font-size: 14px;
+        }
+
+        .stat-item span {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .module-arrow {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .module-card:hover .module-arrow {
+            opacity: 1;
+            transform: translateX(4px);
+        }
+
+        .module-arrow i {
+            font-size: 20px;
+            color: #409EFF;
+        }
+
+        /* 核心数据图表展示样式 */
+        .data-dashboard {
+            margin-top: 40px;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            height: 160px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .chart-header h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .chart-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chart-placeholder {
+            text-align: center;
+            color: #606266;
+        }
+
+        .chart-placeholder i {
+            font-size: 32px;
+            color: #409EFF;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .chart-placeholder p {
+            font-size: 14px;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        /* 响应式调整 */
+        @media screen and (max-width: 768px) {
+            .module-card {
+                height: 160px;
+                padding: 20px;
+            }
+
+            .module-icon i {
+                font-size: 36px;
+            }
+
+            .module-title {
+                font-size: 16px;
+            }
+
+            .module-desc {
+                font-size: 12px;
+            }
+
+            .chart-card {
+                height: 140px;
+                padding: 16px;
+            }
+
+            .chart-header h4 {
+                font-size: 14px;
+            }
+
+            .chart-placeholder i {
+                font-size: 24px;
+            }
+
+            .chart-placeholder p {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="dashboard-container">
+        <div class="page-header">
+            <h1 class="page-title">系统概览</h1>
+            <div class="typing-container">
+                <div class="typing-text" :class="{ active: isTyping }">{{ currentText }}</div>
+            </div>
+        </div>
+
+        <!-- 四大守护模块卡片 -->
+        <div class="guardian-modules" style="margin-bottom: 40px;">
+            <h2 class="section-title">核心功能模块</h2>
+            <el-row :gutter="24">
+                <el-col :xs="24" :sm="12" :md="6">
+                    <div class="module-card code-guardian" @click="openCodeGuardian">
+                        <div class="module-icon">
+                            <i class="el-icon-monitor"></i>
+                        </div>
+                        <div class="module-content">
+                            <h3 class="module-title">代码守护</h3>
+                            <p class="module-desc">智能代码审查，质量保障</p>
+                            <div class="module-stats">
+                                <span class="stat-item">
+                                    <i class="el-icon-warning"></i>
+                                    <span>{{ codeStats.issues || 0 }}</span>
+                                </span>
+                                <span class="stat-item">
+                                    <i class="el-icon-check"></i>
+                                    <span>{{ codeStats.passed || 0 }}</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="module-arrow">
+                            <i class="el-icon-arrow-right"></i>
+                        </div>
+                    </div>
+                </el-col>
+                
+                <el-col :xs="24" :sm="12" :md="6">
+                    <div class="module-card test-guardian" @click="openTestGuardian">
+                        <div class="module-icon">
+                            <i class="el-icon-document-checked"></i>
+                        </div>
+                        <div class="module-content">
+                            <h3 class="module-title">测试守护</h3>
+                            <p class="module-desc">全面测试覆盖，质量验证</p>
+                            <div class="module-stats">
+                                <span class="stat-item">
+                                    <i class="el-icon-video-play"></i>
+                                    <span>{{ testStats.running || 0 }}</span>
+                                </span>
+                                <span class="stat-item">
+                                    <i class="el-icon-circle-check"></i>
+                                    <span>{{ testStats.completed || 0 }}</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="module-arrow">
+                            <i class="el-icon-arrow-right"></i>
+                        </div>
+                    </div>
+                </el-col>
+                
+                <el-col :xs="24" :sm="12" :md="6">
+                    <div class="module-card review-guardian" @click="openReviewGuardian">
+                        <div class="module-icon">
+                            <i class="el-icon-view"></i>
+                        </div>
+                        <div class="module-content">
+                            <h3 class="module-title">评审守护</h3>
+                            <p class="module-desc">专业评审流程，标准把控</p>
+                            <div class="module-stats">
+                                <span class="stat-item">
+                                    <i class="el-icon-time"></i>
+                                    <span>{{ reviewStats.pending || 0 }}</span>
+                                </span>
+                                <span class="stat-item">
+                                    <i class="el-icon-finished"></i>
+                                    <span>{{ reviewStats.approved || 0 }}</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="module-arrow">
+                            <i class="el-icon-arrow-right"></i>
+                        </div>
+                    </div>
+                </el-col>
+                
+                <el-col :xs="24" :sm="12" :md="6">
+                    <div class="module-card ops-guardian" @click="openOpsGuardian">
+                        <div class="module-icon">
+                            <i class="el-icon-setting"></i>
+                        </div>
+                        <div class="module-content">
+                            <h3 class="module-title">运维守护</h3>
+                            <p class="module-desc">智能运维监控，稳定保障</p>
+                            <div class="module-stats">
+                                <span class="stat-item">
+                                    <i class="el-icon-warning-outline"></i>
+                                    <span>{{ opsStats.alerts || 0 }}</span>
+                                </span>
+                                <span class="stat-item">
+                                    <i class="el-icon-success"></i>
+                                    <span>{{ opsStats.healthy || 0 }}</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="module-arrow">
+                            <i class="el-icon-arrow-right"></i>
+                        </div>
+                    </div>
+                </el-col>
+            </el-row>
+        </div>
+
+        <!-- 核心数据图表展示 -->
+        <div class="data-dashboard">
+            <h2 class="section-title">核心数据概览</h2>
+            <el-row :gutter="24">
+                <!-- 代码质量趋势 -->
+                <el-col :xs="24" :sm="12" :lg="6">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h4>代码质量趋势</h4>
+                            <el-tag size="mini" type="success">良好</el-tag>
+                        </div>
+                        <div class="chart-content">
+                            <div class="chart-placeholder">
+                                <i class="el-icon-trend-charts"></i>
+                                <p>代码质量评分: {{ codeQualityScore }}%</p>
+                            </div>
+                        </div>
+                    </div>
+                </el-col>
+                
+                <!-- 测试覆盖率 -->
+                <el-col :xs="24" :sm="12" :lg="6">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h4>测试覆盖率</h4>
+                            <el-tag size="mini" type="warning">待提升</el-tag>
+                        </div>
+                        <div class="chart-content">
+                            <div class="chart-placeholder">
+                                <i class="el-icon-pie-chart"></i>
+                                <p>覆盖率: {{ testCoverage }}%</p>
+                            </div>
+                        </div>
+                    </div>
+                </el-col>
+                
+                <!-- 评审效率 -->
+                <el-col :xs="24" :sm="12" :lg="6">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h4>评审效率</h4>
+                            <el-tag size="mini" type="info">正常</el-tag>
+                        </div>
+                        <div class="chart-content">
+                            <div class="chart-placeholder">
+                                <i class="el-icon-data-analysis"></i>
+                                <p>平均耗时: {{ reviewEfficiency }}h</p>
+                            </div>
+                        </div>
+                    </div>
+                </el-col>
+                
+                <!-- 系统稳定性 -->
+                <el-col :xs="24" :sm="12" :lg="6">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h4>系统稳定性</h4>
+                            <el-tag size="mini" type="success">稳定</el-tag>
+                        </div>
+                        <div class="chart-content">
+                            <div class="chart-placeholder">
+                                <i class="el-icon-monitor"></i>
+                                <p>可用性: {{ systemUptime }}%</p>
+                            </div>
+                        </div>
+                    </div>
+                </el-col>
+            </el-row>
+        </div>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data() {
+                return {
+                    // 打字特效相关
+                    currentText: '',
+                    isTyping: false,
+                    fullText: 'AI 赋能，新一代研发管理守护系统',
+                    typingSpeed: 150,  // 打字速度
+                    pauseTime: 2000,   // 完成后暂停时间
+                    
+                    // 四大模块统计数据
+                    codeStats: {
+                        issues: 10,
+                        passed: 8
+                    },
+                    testStats: {
+                        running: 2,
+                        completed: 5
+                    },
+                    reviewStats: {
+                        pending: 3,
+                        approved: 4
+                    },
+                    opsStats: {
+                        alerts: 1,
+                        healthy: 6
+                    },
+                    
+                    // 核心图表数据
+                    codeQualityScore: 88,
+                    testCoverage: 80,
+                    reviewEfficiency: 2.8,
+                    systemUptime: 99.9
+                };
+            },
+            mounted() {
+                this.startStatisticsUpdate();
+                this.startTyping();
+            },
+            methods: {
+                openCodeGuardian() {
+                    // 通知父窗口切换菜单
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({ type: 'switchMenu', menu: 'code' }, '*');
+                    }
+                },
+                openTestGuardian() {
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({ type: 'switchMenu', menu: 'test' }, '*');
+                    }
+                },
+                openReviewGuardian() {
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({ type: 'switchMenu', menu: 'review' }, '*');
+                    }
+                },
+                openOpsGuardian() {
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({ type: 'switchMenu', menu: 'ops' }, '*');
+                    }
+                },
+                startStatisticsUpdate() {
+                    // 每30秒更新一次统计数据
+                    setInterval(() => {
+                        this.updateStatistics();
+                    }, 30000);
+                },
+                updateStatistics() {
+                    // 模拟数据更新
+                    this.codeStats.issues = Math.floor(Math.random() * 15) + 5;
+                    this.codeStats.passed = Math.floor(Math.random() * 10) + 5;
+                    this.testStats.running = Math.floor(Math.random() * 5) + 1;
+                    this.testStats.completed = Math.floor(Math.random() * 8) + 3;
+                    this.reviewStats.pending = Math.floor(Math.random() * 6) + 1;
+                    this.reviewStats.approved = Math.floor(Math.random() * 8) + 2;
+                    this.opsStats.alerts = Math.floor(Math.random() * 3) + 0;
+                    this.opsStats.healthy = Math.floor(Math.random() * 10) + 5;
+                    
+                    this.codeQualityScore = Math.floor(Math.random() * 20) + 80;
+                    this.testCoverage = Math.floor(Math.random() * 25) + 70;
+                    this.reviewEfficiency = (Math.random() * 2 + 1.5).toFixed(1);
+                    this.systemUptime = (Math.random() * 0.4 + 99.6).toFixed(1);
+                },
+                async typeText() {
+                    while (true) {  // 持续循环播放
+                        // 开始新一轮打字
+                        this.isTyping = true;
+                        this.currentText = '';
+
+                        // 打字效果
+                        for (let i = 0; i < this.fullText.length; i++) {
+                            this.currentText += this.fullText[i];
+                            // 随机延迟，使打字效果更自然
+                            await new Promise(resolve => setTimeout(resolve, 
+                                this.typingSpeed + Math.random() * 50
+                            ));
+                        }
+
+                        // 完整显示后暂停
+                        await new Promise(resolve => setTimeout(resolve, this.pauseTime));
+
+                        // 渐隐效果
+                        this.isTyping = false;
+                        
+                        // 等待渐隐完成
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+                },
+                
+                startTyping() {
+                    this.typeText();
+                }
+            }
+        });
+    </script>
+</body>
+</html> 

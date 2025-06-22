@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ZSGuardian-AI赋能研发管理守护系统</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <script src="/js/common.js"></script>
+    <script src="/js/iframe-redirect.js"></script>
+    <link rel="stylesheet" href="/lib/element-ui.css">
+    <style>
+        .analysis-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        .comparison-section {
+            margin-bottom: 30px;
+        }
+
+        .code-diff {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        .uncovered-code {
+            background-color: #fef0f0;
+            border-left: 3px solid #f56c6c;
+            padding: 10px;
+            margin: 5px 0;
+        }
+
+        .coverage-warning {
+            margin: 10px 0;
+        }
+
+        .file-header {
+            font-weight: bold;
+            margin: 15px 0 10px;
+            padding: 8px;
+            background: #ecf5ff;
+            border-radius: 4px;
+        }
+
+        .test-case {
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            margin: 10px 0;
+            padding: 15px;
+        }
+
+        .test-case-header {
+            font-weight: bold;
+            color: #409EFF;
+            margin-bottom: 10px;
+        }
+
+        .code-block {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            background: #282c34;
+            color: #abb2bf;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        .highlight-diff {
+            background-color: #fef0f0;
+            color: #f56c6c;
+        }
+
+        .coverage-stats {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f4f4f5;
+            border-radius: 4px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #409EFF;
+        }
+
+        .stat-label {
+            color: #606266;
+            margin-top: 5px;
+        }
+
+        /* 新增样式 */
+        .test-recorder {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+        }
+
+        .record-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .element-selector {
+            background: rgba(64, 158, 255, 0.1);
+            border: 2px dashed #409EFF;
+            padding: 5px;
+            position: absolute;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        .test-steps {
+            margin: 10px 0;
+        }
+
+        .step-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #ebeef5;
+        }
+
+        .api-test-config {
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+<div id="app" class="analysis-container">
+    <el-card>
+        <div slot="header">
+            <span>测试守护自动化平台</span>
+            <el-button style="float: right" type="primary" @click="goToManagement">用例管理</el-button>
+        </div>
+
+        <!-- 新增测试用例录入部分 -->
+        <div class="comparison-section">
+            <h3>测试用例管理</h3>
+            <el-tabs v-model="activeTab">
+                <el-tab-pane label="UI测试" name="ui">
+                    <div class="test-recorder">
+                        <div class="record-controls">
+                            <el-button type="primary" @click="checkAndStartRecording" :disabled="isRecording">
+                                开始录制
+                            </el-button>
+                            <el-button type="danger" @click="stopRecording" :disabled="!isRecording">
+                                停止录制
+                            </el-button>
+                            <el-button type="success" @click="captureElement" :disabled="!isRecording">
+                                选择元素
+                            </el-button>
+                            <el-button type="info" @click="showDriverConfig">
+                                配置 ChromeDriver
+                            </el-button>
+                        </div>
+
+                        <div class="test-steps">
+                            <el-table :data="testSteps">
+                                <el-table-column label="步骤" prop="step"></el-table-column>
+                                <el-table-column label="操作" prop="action"></el-table-column>
+                                <el-table-column label="元素" prop="selector"></el-table-column>
+                                <el-table-column label="值" prop="value"></el-table-column>
+                                <el-table-column label="操作">
+                                    <template slot-scope="scope">
+                                        <el-button size="mini" type="danger" @click="deleteStep(scope.$index)">
+                                            删除
+                                        </el-button>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                        </div>
+                    </div>
+                </el-tab-pane>
+
+                <el-tab-pane label="接口测试" name="api">
+                    <div class="api-test-config">
+                        <el-form :model="apiTest" label-width="100px">
+                            <el-form-item label="请求URL">
+                                <el-input v-model="apiTest.url"></el-input>
+                            </el-form-item>
+                            <el-form-item label="请求方法">
+                                <el-select v-model="apiTest.method">
+                                    <el-option label="GET" value="GET"></el-option>
+                                    <el-option label="POST" value="POST"></el-option>
+                                    <el-option label="PUT" value="PUT"></el-option>
+                                    <el-option label="DELETE" value="DELETE"></el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="请求头">
+                                <el-input type="textarea" v-model="apiTest.headers"></el-input>
+                            </el-form-item>
+                            <el-form-item label="请求体">
+                                <el-input type="textarea" v-model="apiTest.body"></el-input>
+                            </el-form-item>
+                            <el-form-item label="并发用户数">
+                                <el-input-number v-model="apiTest.threads" :min="1"></el-input-number>
+                            </el-form-item>
+                        </el-form>
+                    </div>
+                </el-tab-pane>
+
+                <!-- 新增手动录入标签页 -->
+                <el-tab-pane label="手动录入" name="manual">
+                    <div class="manual-input">
+                        <el-form :model="manualTest" label-width="100px">
+                            <el-form-item label="用例名称">
+                                <el-input v-model="manualTest.name"></el-input>
+                            </el-form-item>
+                            <el-form-item label="测试类型">
+                                <el-select v-model="manualTest.type">
+                                    <el-option label="UI测试" value="UI"></el-option>
+                                    <el-option label="接口测试" value="API"></el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="测试步骤">
+                                <el-table :data="manualTest.steps" style="width: 100%">
+                                    <el-table-column label="步骤序号" width="100">
+                                        <template slot-scope="scope">
+                                            {{ scope.$index + 1 }}
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="操作描述">
+                                        <template slot-scope="scope">
+                                            <el-input v-model="scope.row.description" type="textarea"></el-input>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="操作" width="150">
+                                        <template slot-scope="scope">
+                                            <el-button size="mini" type="danger" @click="removeStep(scope.$index)">删除</el-button>
+                                        </template>
+                                    </el-table-column>
+                                </el-table>
+                                <el-button style="margin-top: 10px" @click="addStep">添加步骤</el-button>
+                            </el-form-item>
+                        </el-form>
+                    </div>
+                </el-tab-pane>
+            </el-tabs>
+
+            <div class="test-execution">
+                <el-button type="primary" @click="checkAndRunTest" :disabled="isRunning">
+                    执行测试
+                </el-button>
+                <el-button type="success" @click="saveTestCase">保存用例</el-button>
+            </div>
+        </div>
+
+        <!-- 修改测试报告部分 -->
+        <div class="comparison-section">
+            <h3>测试执行报告</h3>
+            <div class="coverage-stats">
+                <div class="stat-item">
+                    <div class="stat-value">{{ testResults.passRate }}%</div>
+                    <div class="stat-label">测试通过率</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">{{ testResults.totalCases }}</div>
+                    <div class="stat-label">总用例数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">{{ testResults.executionTime }}s</div>
+                    <div class="stat-label">执行时间</div>
+                </div>
+            </div>
+
+            <el-table :data="testResults.details">
+                <el-table-column label="用例名称" prop="name"></el-table-column>
+                <el-table-column label="类型" prop="type"></el-table-column>
+                <el-table-column label="状态" prop="status">
+                    <template slot-scope="scope">
+                        <el-tag :type="scope.row.status === 'PASS' ? 'success' : 'danger'">
+                            {{ scope.row.status }}
+                        </el-tag>
+                    </template>
+                </el-table-column>
+                <el-table-column label="耗时" prop="duration"></el-table-column>
+                <el-table-column label="详情">
+                    <template slot-scope="scope">
+                        <el-button size="mini" @click="showTestDetail(scope.row)">查看</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </div>
+    </el-card>
+
+    <!-- 测试详情对话框 -->
+    <el-dialog title="测试详情" :visible.sync="detailDialogVisible">
+        <div v-if="selectedTest">
+            <div v-if="selectedTest.type === 'UI'">
+                <img :src="selectedTest.screenshot" class="test-screenshot">
+            </div>
+            <pre v-if="selectedTest.type === 'API'" class="api-response">{{ selectedTest.response }}</pre>
+            <div class="test-logs">
+                <p v-for="log in selectedTest.logs" :key="log.time">
+                    {{ log.time }} - {{ log.message }}
+                </p>
+            </div>
+        </div>
+    </el-dialog>
+
+    <!-- 添加 ChromeDriver 配置对话框 -->
+    <el-dialog title="ChromeDriver 配置" :visible.sync="driverConfigVisible">
+        <el-form :model="driverConfig">
+            <el-form-item label="ChromeDriver 路径">
+                <el-input v-model="driverConfig.path" placeholder="请输入 ChromeDriver 路径"></el-input>
+            </el-form-item>
+        </el-form>
+        <span slot="footer" class="dialog-footer">
+                <el-button @click="driverConfigVisible = false">取消</el-button>
+                <el-button type="primary" @click="saveDriverConfig">保存</el-button>
+            </span>
+    </el-dialog>
+</div>
+
+<script src="/lib/vue.min.js"></script>
+<script src="/lib/element-ui.min.js"></script>
+<script src="/js/test-recorder.js"></script>
+<script>
+    new Vue({
+        el: '#app',
+        data: {
+            activeTab: 'ui',
+            isRecording: false,
+            testSteps: [],
+            recorder: null,
+            apiTest: {
+                url: '',
+                method: 'GET',
+                headers: '',
+                body: '',
+                threads: 1
+            },
+            testResults: {
+                passRate: 0,
+                totalCases: 0,
+                executionTime: 0,
+                details: []
+            },
+            detailDialogVisible: false,
+            selectedTest: null,
+            manualTest: {
+                name: '',
+                type: 'UI',
+                steps: []
+            },
+            driverConfigVisible: false,
+            driverConfig: {
+                path: ''
+            },
+            isRunning: false
+        },
+        created() {
+            checkLogin().then(loggedIn => {
+                if (loggedIn) {
+                    // 初始化录制器
+                    this.recorder = new TestRecorder();
+                }
+            });
+        },
+        methods: {
+            async checkAndStartRecording() {
+                const envCheck = await this.checkEnvironment();
+                if (envCheck.ready) {
+                    this.startRecording();
+                } else {
+                    this.$alert(envCheck.message, '环境配置提示', {
+                        dangerouslyUseHTMLString: true,
+                        confirmButtonText: '确定'
+                    });
+                }
+            },
+
+            async checkEnvironment() {
+                try {
+                    const response = await fetch('/api/tests/check-environment');
+                    const result = await response.json();
+
+                    if (!result.ready) {
+                        let message = '<div style="white-space: pre-line;">';
+                        message += result.setupInstructions;
+                        message += '</div>';
+                        return { ready: false, message };
+                    }
+                    return { ready: true };
+                } catch (error) {
+                    console.error('环境检查失败:', error);
+                    return { ready: false, message: '环境检查失败，请稍后重试' };
+                }
+            },
+
+            startRecording() {
+                this.isRecording = true;
+                this.recorder.startRecording();
+                this.$message.success('开始录制');
+            },
+            stopRecording() {
+                this.isRecording = false;
+                this.recorder.stopRecording();
+                // 获取录制的步骤
+                this.testSteps = this.recorder.steps.map((step, index) => ({
+                    step: index + 1,
+                    action: step.type,
+                    selector: step.selector,
+                    value: step.value || ''
+                }));
+                this.$message.success('录制完成');
+            },
+            captureElement() {
+                this.recorder.enableElementSelector();
+                this.$message.info('请点击要选择的元素');
+            },
+            deleteStep(index) {
+                this.testSteps.splice(index, 1);
+            },
+            async executeTests() {
+                try {
+                    const response = await fetch('/api/tests/execute', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            type: this.activeTab === 'ui' ? 'UI' : this.activeTab === 'api' ? 'API' : 'manual',
+                            steps: this.activeTab === 'ui' ? this.testSteps : this.activeTab === 'api' ? [this.apiTest] : this.manualTest.steps,
+                            configuration: this.activeTab === 'api' ? this.apiTest : null
+                        })
+                    });
+
+                    const result = await response.json();
+                    this.testResults = result;
+                    this.$message.success('测试执行完成');
+                } catch (error) {
+                    this.$message.error('测试执行失败：' + error.message);
+                }
+            },
+            async saveTestCase() {
+                try {
+                    const response = await fetch('/api/tests/save', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            type: this.activeTab === 'ui' ? 'UI' : this.activeTab === 'api' ? 'API' : 'manual',
+                            steps: this.activeTab === 'ui' ? this.testSteps : this.activeTab === 'api' ? [this.apiTest] : this.manualTest.steps,
+                            configuration: this.activeTab === 'api' ? this.apiTest : null
+                        })
+                    });
+
+                    await response.json();
+                    this.$message.success('测试用例保存成功');
+                } catch (error) {
+                    this.$message.error('保存失败：' + error.message);
+                }
+            },
+            showTestDetail(test) {
+                this.selectedTest = test;
+                this.detailDialogVisible = true;
+            },
+            addStep() {
+                this.manualTest.steps.push({
+                    description: ''
+                });
+            },
+            removeStep(index) {
+                this.manualTest.steps.splice(index, 1);
+            },
+            async saveManualTest() {
+                try {
+                    const response = await fetch('/api/tests/save-manual', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(this.manualTest)
+                    });
+
+                    if (response.ok) {
+                        this.$message.success('测试用例保存成功');
+                        this.manualTest = {
+                            name: '',
+                            type: 'UI',
+                            steps: []
+                        };
+                    } else {
+                        this.$message.error('保存失败');
+                    }
+                } catch (error) {
+                    this.$message.error('保存失败：' + error.message);
+                }
+            },
+            showDriverConfig() {
+                this.driverConfigVisible = true;
+                // 获取当前配置
+                fetch('/api/tests/driver-config')
+                    .then(response => response.json())
+                    .then(data => {
+                        this.driverConfig.path = data.path;
+                    });
+            },
+            async saveDriverConfig() {
+                try {
+                    const response = await fetch('/api/tests/driver-config', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(this.driverConfig)
+                    });
+
+                    if (response.ok) {
+                        this.$message.success('配置保存成功');
+                        this.driverConfigVisible = false;
+                    } else {
+                        this.$message.error('配置保存失败');
+                    }
+                } catch (error) {
+                    this.$message.error('配置保存失败：' + error.message);
+                }
+            },
+            async checkAndRunTest() {
+                const envCheck = await this.checkEnvironment();
+                if (envCheck.ready) {
+                    this.executeTest();
+                } else {
+                    this.$alert(envCheck.message, '环境配置提示', {
+                        dangerouslyUseHTMLString: true,
+                        confirmButtonText: '确定'
+                    });
+                }
+            },
+            async executeTest() {
+                this.isRunning = true;
+                try {
+                    await this.executeTests();
+                    this.$message.success('测试执行完成');
+                } catch (error) {
+                    this.$message.error('测试执行失败：' + error.message);
+                } finally {
+                    this.isRunning = false;
+                }
+            },
+            goToManagement() {
+                window.location.href = '/test-case-management.html';
+            }
+        }
+    })
+</script>
+<!-- 在现有的 test-guardian.html 中添加环境检查脚本 -->
+<script th:inline="javascript">
+    async function checkEnvironment() {
+        try {
+            const response = await fetch('/api/tests/check-environment');
+            const result = await response.json();
+
+            if (!result.ready) {
+                let message = "执行测试前需要完成以下配置：\n\n";
+                if (!result.chromeInstalled) {
+                    message += "- 请安装Chrome浏览器\n";
+                }
+                if (!result.driverConfigured) {
+                    message += "- 请配置ChromeDriver\n";
+                }
+                message += "\n详细说明：\n" + result.setupInstructions;
+
+                alert(message);
+                return false;
+            }
+            return true;
+        } catch (error) {
+            console.error('环境检查失败:', error);
+            return false;
+        }
+    }
+
+    // 在执行测试前调用环境检查
+    async function beforeTestExecution() {
+        if (await checkEnvironment()) {
+            // 继续执行原有的测试逻辑
+            return true;
+        }
+        return false;
+    }
+
+
+</script>
+
+<script>
+    // 等待原始函数加载完成
+    window.addEventListener('load', function() {
+        if (typeof executeTest === 'function') {
+            // 保存原始函数
+            const originalExecuteTest = executeTest;
+
+            // 重写执行函数
+            window.executeTest = async function() {
+                try {
+                    const response = await fetch('/api/test/check-environment');
+                    const result = await response.json();
+
+                    if (result.ready) {
+                        originalExecuteTest();
+                    } else {
+                        Vue.prototype.$alert(result.setupInstructions, '环境配置提示', {
+                            dangerouslyUseHTMLString: true,
+                            confirmButtonText: '确定'
+                        });
+                    }
+                } catch (error) {
+                    console.error('环境检查失败:', error);
+                    Vue.prototype.$message.error('环境检查失败，请稍后重试');
+                }
+            };
+        }
+    });
+</script>
+</body>
+</html>

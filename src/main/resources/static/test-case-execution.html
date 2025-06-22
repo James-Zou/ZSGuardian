@@ -1,0 +1,156 @@
+<template>
+  <div class="execution-page">
+    <!-- 顶部信息栏 -->
+    <div class="execution-header">
+      <div class="timer">已用时间：{{ formatDuration }}</div>
+      <div class="progress">
+        完成进度：<el-progress :percentage="progress"></el-progress>
+      </div>
+    </div>
+
+    <!-- 测试用例列表 -->
+    <div class="case-list">
+      <div v-for="(category, index) in categories" :key="index" class="category-section">
+        <h2 class="category-title">{{ category.name }}</h2>
+        <div v-for="(testCase, caseIndex) in category.cases" :key="caseIndex" class="test-case">
+          <div class="case-content">
+            <h3>{{ testCase.title }}</h3>
+            <div class="expected-result">
+              预期结果：{{ testCase.expectedResult }}
+            </div>
+          </div>
+          <div class="case-validation">
+            <el-radio-group v-model="testCase.status" @change="handleStatusChange(testCase)">
+              <el-radio label="PASS">验证成功</el-radio>
+              <el-radio label="FAIL">验证失败</el-radio>
+            </el-radio-group>
+            <el-input
+              v-if="testCase.status === 'FAIL'"
+              v-model="testCase.comment"
+              type="textarea"
+              placeholder="请输入失败原因"
+              :rules="[{ required: true, message: '请输入失败原因' }]"
+            ></el-input>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部操作栏 -->
+    <div class="execution-footer">
+      <el-button type="primary" @click="completeExecution">执行完成</el-button>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      startTime: new Date(),
+      timer: null,
+      duration: 0,
+      progress: 0,
+      categories: [],
+      executionId: null
+    }
+  },
+  
+  computed: {
+    formatDuration() {
+      const hours = Math.floor(this.duration / 3600)
+      const minutes = Math.floor((this.duration % 3600) / 60)
+      const seconds = this.duration % 60
+      return `${hours}:${minutes}:${seconds}`
+    }
+  },
+  
+  methods: {
+    async loadExecutionDetail() {
+      try {
+        const { data } = await axios.get(`/api/execution-plans/${this.executionId}/cases`)
+        this.categories = this.formatCategories(data)
+      } catch (error) {
+        this.$message.error('加载失败：' + error.message)
+      }
+    },
+    
+    handleStatusChange(testCase) {
+      if (testCase.status === 'PASS') {
+        testCase.comment = ''
+      }
+      this.calculateProgress()
+    },
+    
+    calculateProgress() {
+      const total = this.categories.reduce((sum, category) => sum + category.cases.length, 0)
+      const completed = this.categories.reduce((sum, category) => {
+        return sum + category.cases.filter(c => c.status).length
+      }, 0)
+      this.progress = Math.round((completed / total) * 100)
+    },
+    
+    async completeExecution() {
+      // 检查是否所有用例都已执行
+      const isCompleted = this.categories.every(category => 
+        category.cases.every(c => c.status)
+      )
+      
+      if (!isCompleted) {
+        this.$message.warning('还有未执行完的用例，请继续执行')
+        return
+      }
+      
+      try {
+        await axios.post(`/api/execution-plans/${this.executionId}/complete`, {
+          cases: this.categories.flatMap(category => 
+            category.cases.map(c => ({
+              id: c.id,
+              status: c.status,
+              comment: c.comment
+            }))
+          )
+        })
+        
+        this.$message.success('执行完成')
+        this.$router.push('/test-case-management.html')
+      } catch (error) {
+        this.$message.error('提交失败：' + error.message)
+      }
+    },
+    
+    startTimer() {
+      this.timer = setInterval(() => {
+        this.duration = Math.floor((new Date() - this.startTime) / 1000)
+      }, 1000)
+    },
+    
+    formatCategories(data) {
+      // 将平铺的用例数据按category分组
+      const categoryMap = {}
+      data.forEach(item => {
+        if (!categoryMap[item.category]) {
+          categoryMap[item.category] = {
+            name: item.category,
+            cases: []
+          }
+        }
+        categoryMap[item.category].cases.push(item)
+      })
+      return Object.values(categoryMap)
+    }
+  },
+  
+  created() {
+    this.executionId = this.$route.params.id
+    this.loadExecutionDetail()
+    this.startTimer()
+  },
+  
+  beforeDestroy() {
+    if (this.timer) {
+      clearInterval(this.timer)
+    }
+  }
+}
+</script> 

@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>ZSGuardian-AI赋能研发管理守护系统</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <script src="/js/common.js"></script>
+    <script src="/js/iframe-redirect.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/lib/bootstrap.min.css" rel="stylesheet">
+    <link href="/lib/animate.min.css" rel="stylesheet">
+    <script src="/lib/jquery.min.js"></script>
+    <script src="/lib/bootstrap.bundle.min.js"></script>
+    <!-- Vue2 -->
+    <script src="/lib/vue.min.js"></script>
+    <!-- Element UI 2.x -->
+    <link rel="stylesheet" href="/lib/element-ui.css">
+    <script src="/lib/element-ui.min.js"></script>
+    <script src="/lib/axios.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --secondary-color: #af4c68;
+            --primary-hover: #1976d2;
+            --secondary-hover: #c94f7c;
+            --primary-light: #e3f2fd;
+            --bg-color: #f7f9fa;
+            --text-color: #1f2937;
+            --border-color: #e5e7eb;
+            --card-bg: #fff;
+            --header-bg: #f0f6fa;
+        }
+        body {
+            background: #fff;
+            min-height: 100vh;
+            color: var(--text-color);
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .el-card {
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(33,150,243,0.08), 0 1.5px 4px rgba(175,76,104,0.04);
+            border: none;
+            background: var(--card-bg);
+        }
+        .el-card__body {
+            padding: 32px 24px 24px 24px;
+        }
+        .el-table {
+            border-radius: 12px;
+            overflow: hidden;
+            background: #fff;
+        }
+        .el-table th {
+            background: linear-gradient(90deg, #2196F3 0%, #af4c68 100%);
+            color: #fff;
+            font-weight: 600;
+            border-bottom: 2px solid #2196F3;
+        }
+        .el-table tr {
+            transition: background 0.2s;
+        }
+        .el-table tbody tr:hover {
+            background: #e3f2fd;
+        }
+        .el-pagination {
+            margin: 0.5em 0;
+        }
+        .el-pagination .el-pager li.active {
+            background: linear-gradient(90deg, #2196F3 0%, #af4c68 100%);
+            color: #fff;
+            border-radius: 6px;
+        }
+        .el-pagination .el-pager li {
+            border-radius: 6px;
+        }
+        .el-button--primary, .el-button--success {
+            background: linear-gradient(90deg, #2196F3 0%, #af4c68 100%);
+            border: none;
+        }
+        .el-button--primary:hover, .el-button--success:hover {
+            background: linear-gradient(90deg, #1976d2 0%, #c94f7c 100%);
+        }
+        .el-dialog {
+            border-radius: 16px;
+        }
+        .el-dialog__header {
+            background: linear-gradient(90deg, #2196F3 0%, #af4c68 100%);
+            color: #fff;
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
+        }
+        .el-dialog__title {
+            color: #fff;
+        }
+        .el-form-item__label {
+            color: #2196F3;
+            font-weight: 500;
+        }
+        .el-tag {
+            background: linear-gradient(90deg, #2196F3 0%, #af4c68 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            margin-right: 6px;
+        }
+        .el-tag--danger {
+            background: linear-gradient(90deg, #af4c68 0%, #2196F3 100%);
+        }
+        .el-upload__tip {
+            color: #af4c68;
+        }
+        .el-input__inner, .el-select .el-input__inner {
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        .el-select-dropdown__item.selected {
+            background: #e3f2fd;
+            color: #2196F3;
+        }
+        .el-radio__input.is-checked .el-radio__inner {
+            border-color: #2196F3;
+            background: #2196F3;
+        }
+        .el-radio__label {
+            color: #af4c68;
+        }
+        .el-radio__input.is-checked + .el-radio__label {
+            color: #2196F3;
+        }
+        .el-dialog__footer {
+            border-bottom-left-radius: 16px;
+            border-bottom-right-radius: 16px;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            .el-card__body {
+                padding: 16px 6px 12px 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div id="app" class="container" style="max-width:1200px;">
+    <!-- 主题区 -->
+    <el-card class="mb-4" shadow="hover">
+        <div class="text-center">
+            <h1 style="color:#00b140;">AI 变更评审</h1>
+            <p class="lead">智能化变更评审平台，支持变更内容、需求、Bug多维度管理与追踪，助力高效安全交付。</p>
+        </div>
+    </el-card>
+
+    <!-- 搜索区 -->
+    <el-form :inline="true" :model="searchForm" class="mb-3" @submit.native.prevent>
+        <el-form-item label="变更标题">
+            <el-input v-model="searchForm.title" placeholder="变更标题" clearable></el-input>
+        </el-form-item>
+        <el-form-item label="执行人">
+            <el-input v-model="searchForm.executor" placeholder="执行人" clearable></el-input>
+        </el-form-item>
+        <el-form-item label="审核人">
+            <el-input v-model="searchForm.auditor" placeholder="审核人" clearable></el-input>
+        </el-form-item>
+        <el-form-item label="变更类型">
+            <el-select v-model="searchForm.type" placeholder="全部类型" clearable style="width:120px;">
+                <el-option label="代码变更" value="code"></el-option>
+                <el-option label="数据库变更" value="database"></el-option>
+                <el-option label="配置变更" value="config"></el-option>
+                <el-option label="架构变更" value="architecture"></el-option>
+            </el-select>
+        </el-form-item>
+        <el-form-item>
+            <el-button type="primary" @click="doSearch">查询</el-button>
+            <el-button type="success" @click="showChangeDialog">新增变更</el-button>
+        </el-form-item>
+    </el-form>
+
+    <!-- 变更评审记录表格 -->
+    <el-table :data="changeReviews" border stripe style="width:100%;margin-bottom:1em;">
+        <el-table-column prop="title" label="变更标题" min-width="120"></el-table-column>
+        <el-table-column prop="changeTime" label="变更时间" min-width="140">
+            <template slot-scope="scope">
+                {{ formatDate(scope.row.changeTime) }}
+            </template>
+        </el-table-column>
+        <el-table-column prop="changeType" label="变更类型" min-width="100">
+            <template slot-scope="scope">
+                {{ getChangeTypeLabel(scope.row.changeType) }}
+            </template>
+        </el-table-column>
+        <el-table-column prop="executorName" label="执行人" min-width="100"></el-table-column>
+        <el-table-column prop="auditorName" label="审核人" min-width="100"></el-table-column>
+        <el-table-column label="操作" min-width="120">
+            <template slot-scope="scope">
+                <el-button size="mini" @click="editChange(scope.row)">编辑</el-button>
+                <el-button size="mini" type="danger" @click="deleteChange(scope.row)">删除</el-button>
+            </template>
+        </el-table-column>
+    </el-table>
+
+    <!-- 分页 -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div>共 {{ total }} 条</div>
+        <el-pagination
+            background
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="total"
+            :page-sizes="[10, 20, 50, 100]"
+            :page-size="pageSize"
+            :current-page="page"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+            style="margin: 0.5em 0;"
+        ></el-pagination>
+    </div>
+
+    <!-- 新增/编辑弹窗 -->
+    <el-dialog :title="changeDialogTitle" :visible.sync="changeDialogVisible" width="60%">
+        <el-form :model="changeForm" :rules="changeRules" ref="changeForm" label-width="100px">
+            <el-form-item label="变更标题" prop="title">
+                <el-input v-model="changeForm.title"></el-input>
+            </el-form-item>
+            <el-form-item label="变更时间" prop="changeTime">
+                <el-date-picker v-model="changeForm.changeTime" type="datetime" placeholder="选择变更时间" style="width:100%;"></el-date-picker>
+            </el-form-item>
+            <el-form-item label="执行人" prop="executorId">
+                <el-select v-model="changeForm.executorId" filterable remote :remote-method="searchUsers" :loading="userLoading">
+                    <el-option v-for="user in userOptions" :key="user.id" :label="user.username" :value="user.id"/>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="审核人" prop="auditorId">
+                <el-select v-model="changeForm.auditorId" filterable remote :remote-method="searchUsers" :loading="userLoading">
+                    <el-option v-for="user in userOptions" :key="user.id" :label="user.username" :value="user.id"/>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="变更类型" prop="changeType">
+                <el-radio-group v-model="changeForm.changeType">
+                    <el-radio label="code">代码变更</el-radio>
+                    <el-radio label="database">数据库变更</el-radio>
+                    <el-radio label="config">配置变更</el-radio>
+                    <el-radio label="architecture">架构变更</el-radio>
+                </el-radio-group>
+            </el-form-item>
+            <el-form-item label="变更描述" prop="description">
+                <el-input type="textarea" v-model="changeForm.description"/>
+            </el-form-item>
+            <el-form-item label="上传文档" prop="documentUrl">
+                <el-upload
+                    class="upload-demo"
+                    action="/api/change-reviews/upload"
+                    :on-success="handleUploadSuccess"
+                    :file-list="fileList"
+                    :limit="1"
+                    :auto-upload="true"
+                    :show-file-list="true"
+                    :before-upload="beforeUpload"
+                >
+                    <el-button size="small" type="primary">点击上传</el-button>
+                    <div slot="tip" class="el-upload__tip">支持 .doc, .docx, .pdf，最大10MB</div>
+                </el-upload>
+            </el-form-item>
+            <el-form-item label="关联数据" required>
+                <el-button @click="showRequirementDialog">选择需求</el-button>
+                <el-button @click="showBugDialog">选择Bug</el-button>
+                <div class="tag-list" style="margin-top:8px;">
+                    <el-tag v-for="req in changeForm.requirementList" :key="req.id" closable @close="removeRequirement(req)">{{ req.title }}</el-tag>
+                    <el-tag v-for="bug in changeForm.bugList" :key="bug.id" type="danger" closable @close="removeBug(bug)">{{ bug.title }}</el-tag>
+                </div>
+                <div v-if="!changeForm.requirementList.length && !changeForm.bugList.length" style="color:red;">至少关联一个需求或Bug</div>
+            </el-form-item>
+        </el-form>
+        <div slot="footer">
+            <el-button @click="changeDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="saveChange">保存</el-button>
+        </div>
+    </el-dialog>
+
+    <!-- 选择需求弹窗 -->
+    <el-dialog title="选择需求" :visible.sync="requirementDialogVisible" width="60%">
+     
+        <!-- 筛选区 -->
+        <el-form :inline="true" :model="requirementFilter" class="mb-2">
+            <el-form-item label="需求标题">
+                <el-input v-model="requirementFilter.title" placeholder="需求标题" clearable></el-input>
+            </el-form-item>
+            <el-form-item label="需求编号">
+                <el-input v-model="requirementFilter.code" placeholder="需求编号" clearable></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="searchRequirements">查询</el-button>
+            </el-form-item>
+        </el-form>
+        <!-- 列表 -->
+        <el-table
+            v-if="requirementOptions.length > 0"
+            :data="requirementOptions"
+            @selection-change="handleRequirementSelect"
+            ref="requirementTable"
+            row-key="id"
+            :default-selection="changeForm.requirementList"
+            style="width:100%;"
+        >
+            <el-table-column type="selection" width="55"/>
+            <el-table-column prop="title" label="需求标题"/>
+            <el-table-column prop="code" label="需求编号"/>
+        </el-table>
+        <div v-else style="text-align:center;color:#aaa;padding:2em;">暂无数据</div>
+        <!-- 分页 -->
+        <el-pagination
+            background
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="requirementTotal"
+            :page-sizes="[10, 20, 50]"
+            :page-size="requirementPageSize"
+            :current-page="requirementPage"
+            @size-change="handleRequirementSizeChange"
+            @current-change="handleRequirementPageChange"
+            style="margin-top: 1em;"
+        ></el-pagination>
+        <div slot="footer">
+            <el-button @click="requirementDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="confirmRequirementSelect">确定</el-button>
+        </div>
+    </el-dialog>
+
+    <!-- 选择Bug弹窗 -->
+    <el-dialog title="选择Bug" :visible.sync="bugDialogVisible" width="60%">
+
+        <!-- 筛选区 -->
+        <el-form :inline="true" :model="bugFilter" class="mb-2">
+            <el-form-item label="Bug标题">
+                <el-input v-model="bugFilter.title" placeholder="Bug标题" clearable></el-input>
+            </el-form-item>
+            <el-form-item label="状态">
+                <el-select v-model="bugFilter.status" placeholder="全部状态" clearable style="width:120px;">
+                    <el-option label="待处理" value="PENDING"></el-option>
+                    <el-option label="处理中" value="IN_PROGRESS"></el-option>
+                    <el-option label="已修复" value="FIXED"></el-option>
+                    <el-option label="已关闭" value="CLOSED"></el-option>
+                    <el-option label="重新打开" value="REOPENED"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="searchBugs">查询</el-button>
+            </el-form-item>
+        </el-form>
+        <!-- 列表 -->
+        <el-table
+            v-if="bugOptions.length > 0"
+            :data="bugOptions"
+            @selection-change="handleBugSelect"
+            ref="bugTable"
+            :row-key="row => row.id"
+            :default-selection="changeForm.bugList"
+            style="width:100%;"
+        >
+            <el-table-column type="selection" width="55"/>
+            <el-table-column prop="title" label="Bug标题"/>
+            <el-table-column prop="status" label="状态"/>
+        </el-table>
+        <div v-else style="text-align:center;color:#aaa;padding:2em;">暂无数据</div>
+        <!-- 分页 -->
+        <el-pagination
+            background
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="bugTotal"
+            :page-sizes="[10, 20, 50]"
+            :page-size="bugPageSize"
+            :current-page="bugPage"
+            @size-change="handleBugSizeChange"
+            @current-change="handleBugPageChange"
+            style="margin-top: 1em;"
+        ></el-pagination>
+        <div slot="footer">
+            <el-button @click="bugDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="confirmBugSelect">确定</el-button>
+        </div>
+    </el-dialog>
+</div>
+
+<script>
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                changeReviews: [],
+                total: 0,
+                page: 1,
+                pageSize: 10,
+                searchForm: { title: '', executor: '', auditor: '', type: '' },
+                changeDialogVisible: false,
+                changeDialogTitle: '新增变更',
+                changeForm: {
+                    id: null, title: '', changeTime: '', changeType: 'code', description: '', documentUrl: '',
+                    executorId: null, auditorId: null, requirementList: [], bugList: []
+                },
+                changeRules: {
+                    title: [{ required: true, message: '请输入变更标题', trigger: 'blur' }],
+                    changeTime: [{ required: true, message: '请选择变更时间', trigger: 'change' }],
+                    executorId: [{ required: true, message: '请选择执行人', trigger: 'change' }],
+                    auditorId: [{ required: true, message: '请选择审核人', trigger: 'change' }]
+                },
+                userOptions: [],
+                userLoading: false,
+                requirementDialogVisible: false,
+                requirementOptions: [],
+                requirementFilter: { title: '', code: '' },
+                requirementPage: 1,
+                requirementPageSize: 10,
+                requirementTotal: 0,
+                bugDialogVisible: false,
+                bugOptions: [],
+                bugFilter: { title: '', status: '' },
+                bugPage: 1,
+                bugPageSize: 10,
+                bugTotal: 0,
+                fileList: [],
+                _allRequirementOptions: [],
+                _allBugOptions: []
+            }
+        },
+        created() {
+            this.loadChangeReviews();
+        },
+        methods: {
+            async loadChangeReviews() {
+                const params = {
+                    page: this.page - 1,
+                    size: this.pageSize,
+                    ...this.searchForm
+                };
+                const res = await axios.get('/api/change-reviews', { params });
+                this.changeReviews = res.data.content;
+                this.total = res.data.totalElements;
+            },
+            doSearch() {
+                this.page = 1;
+                this.loadChangeReviews();
+            },
+            handleSizeChange(val) {
+                this.pageSize = val;
+                this.page = 1;
+                this.loadChangeReviews();
+            },
+            handleCurrentChange(val) {
+                this.page = val;
+                this.loadChangeReviews();
+            },
+            showChangeDialog() {
+                this.changeDialogTitle = '新增变更';
+                this.changeForm = { id: null, title: '', changeTime: '', changeType: 'code', description: '', documentUrl: '', executorId: null, auditorId: null, requirementList: [], bugList: [] };
+                this.fileList = [];
+                this.changeDialogVisible = true;
+            },
+            editChange(row) {
+                this.changeDialogTitle = '编辑变更';
+                this.changeForm = { ...row, requirementList: row.requirementIds.map((id, i) => ({ id, title: row.requirementTitles[i] })), bugList: row.bugIds.map((id, i) => ({ id, title: row.bugTitles[i] })) };
+                this.fileList = row.documentUrl ? [{ name: '已上传文档', url: row.documentUrl }] : [];
+                this.changeDialogVisible = true;
+            },
+            async deleteChange(row) {
+                await this.$confirm('确认删除该变更评审？', '提示');
+                await axios.delete(`/api/change-reviews/${row.id}`);
+                this.$message.success('删除成功');
+                this.loadChangeReviews();
+            },
+            async saveChange() {
+                if (!this.changeForm.requirementList.length && !this.changeForm.bugList.length) {
+                    this.$message.error('请至少关联一个需求或Bug');
+                    return;
+                }
+                await this.$refs.changeForm.validate();
+                const dto = {
+                    ...this.changeForm,
+                    requirementIds: this.changeForm.requirementList.map(r => r.id),
+                    bugIds: this.changeForm.bugList.map(b => b.id)
+                };
+                if (dto.id) {
+                    await axios.put(`/api/change-reviews/${dto.id}`, dto);
+                    this.$message.success('更新成功');
+                } else {
+                    await axios.post('/api/change-reviews', dto);
+                    this.$message.success('创建成功');
+                }
+                this.changeDialogVisible = false;
+                this.loadChangeReviews();
+            },
+            showRequirementDialog() {
+                this.requirementDialogVisible = true;
+                this.requirementPage = 1;
+                this.searchRequirements();
+            },
+            async searchRequirements() {
+                const params = {
+                    title: this.requirementFilter.title,
+                    code: this.requirementFilter.code
+                };
+                const res = await axios.get('/api/requirements', { params });
+                // 全量数据
+                this._allRequirementOptions = res.data;
+                this.requirementTotal = this._allRequirementOptions.length;
+                // 前端分页
+                const start = (this.requirementPage - 1) * this.requirementPageSize;
+                const end = start + this.requirementPageSize;
+                this.requirementOptions = this._allRequirementOptions.slice(start, end);
+            },
+            handleRequirementSelect(selection) {
+                this.changeForm.requirementList = selection;
+            },
+            confirmRequirementSelect() {
+                this.requirementDialogVisible = false;
+            },
+            handleRequirementSizeChange(val) {
+                this.requirementPageSize = val;
+                this.requirementPage = 1;
+                this.searchRequirements();
+            },
+            handleRequirementPageChange(val) {
+                this.requirementPage = val;
+                this.searchRequirements();
+            },
+            showBugDialog() {
+                this.bugDialogVisible = true;
+                this.bugPage = 1;
+                this.searchBugs();
+            },
+            async searchBugs() {
+                const params = {
+                    title: this.bugFilter.title,
+                    status: this.bugFilter.status
+                };
+                const res = await axios.get('/api/bugs', { params });
+                this._allBugOptions = res.data;
+                this.bugTotal = this._allBugOptions.length;
+                // 前端分页
+                const start = (this.bugPage - 1) * this.bugPageSize;
+                const end = start + this.bugPageSize;
+                this.bugOptions = this._allBugOptions.slice(start, end);
+            },
+            handleBugSelect(selection) {
+                this.changeForm.bugList = selection;
+            },
+            confirmBugSelect() {
+                this.bugDialogVisible = false;
+            },
+            handleBugSizeChange(val) {
+                this.bugPageSize = val;
+                this.bugPage = 1;
+                this.searchBugs();
+            },
+            handleBugPageChange(val) {
+                this.bugPage = val;
+                this.searchBugs();
+            },
+            removeRequirement(req) {
+                this.changeForm.requirementList = this.changeForm.requirementList.filter(r => r.id !== req.id);
+            },
+            removeBug(bug) {
+                this.changeForm.bugList = this.changeForm.bugList.filter(b => b.id !== bug.id);
+            },
+            async searchUsers(query) {
+                this.userLoading = true;
+                const res = await axios.get('/api/users', { params: { query } });
+                this.userOptions = res.data;
+                this.userLoading = false;
+            },
+            handleUploadSuccess(res, file) {
+                this.changeForm.documentUrl = res.url;
+                this.fileList = [{ name: file.name, url: res.url }];
+            },
+            beforeUpload(file) {
+                const isAllowed = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(file.type);
+                const isLt10M = file.size / 1024 / 1024 < 10;
+                if (!isAllowed) {
+                    this.$message.error('仅支持 doc, docx, pdf 格式');
+                }
+                if (!isLt10M) {
+                    this.$message.error('文件大小不能超过 10MB');
+                }
+                return isAllowed && isLt10M;
+            },
+            formatDate(val) {
+                if (!val) return '';
+                return new Date(val).toLocaleString();
+            },
+            getChangeTypeLabel(type) {
+                switch(type) {
+                    case 'code': return '代码变更';
+                    case 'database': return '数据库变更';
+                    case 'config': return '配置变更';
+                    case 'architecture': return '架构变更';
+                    default: return type;
+                }
+            }
+        }
+    });
+</script>
+</body>
+</html> 

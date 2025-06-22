@@ -211,7 +211,7 @@
                 messages: [
                     {
                         type: 'ai',
-                        content: '您好！我是轻帆云的专属运维专家。我可以协助您进行系统架构分析、性能优化和故障排查。请描述您遇到的问题，我会基于最佳实践为您提供专业建议。'
+                        content: '您好！我是您的专属运维专家。我可以协助您进行系统架构分析、性能优化和故障排查。请描述您遇到的问题，我会基于最佳实践为您提供专业建议。'
                     }
                 ],
                 services: [
@@ -252,10 +252,10 @@
                 const container = document.getElementById('network');
                 const nodes = new vis.DataSet([
                     { id: 1, label: 'gateway', group: 'gateway', title: 'API网关\n状态: 正常\n负载: 45%' },
-                    { id: 2, label: 'douc', group: 'service', title: '用户中心服务\n状态: 正常\n负载: 35%' },
-                    { id: 3, label: 'dosm', group: 'service', title: '服务管理中心\n状态: 正常\n负载: 40%' },
-                    { id: 4, label: 'wisebot', group: 'service', title: '智能机器人服务\n状态: 警告\n负载: 85%' },
-                    { id: 5, label: 'dodi', group: 'database', title: '分布式数据库\n状态: 正常\n负载: 55%' },
+                    { id: 2, label: 'usercenter', group: 'service', title: '用户中心服务\n状态: 正常\n负载: 35%' },
+                    { id: 3, label: 'itsm', group: 'service', title: '服务管理中心\n状态: 正常\n负载: 40%' },
+                    { id: 4, label: 'bot', group: 'service', title: '智能机器人服务\n状态: 警告\n负载: 85%' },
+                    { id: 5, label: 'data', group: 'database', title: '分布式数据库\n状态: 正常\n负载: 55%' },
                     { id: 6, label: 'Redis', group: 'cache', title: '缓存集群\n状态: 正常\n内存使用: 65%' },
                     { id: 7, label: 'MQ', group: 'mq', title: '消息队列集群\n状态: 正常\n队列积压: 12' },
                     { id: 8, label: 'ES', group: 'search', title: '搜索引擎集群\n状态: 正常\n索引状态: Green' }
@@ -399,7 +399,7 @@
                 setTimeout(() => {
                     this.messages.push({
                         type: 'ai',
-                        content: '我是轻帆云的专属运维专家，根据您描述的问题，我建议从以下几个维度进行排查：\n1. 服务器负载情况（CPU、内存、磁盘IO）\n2. 网络连接状态（网络延迟、丢包率）\n3. 系统日志分析（Error级别日志、异常堆栈）\n\n需要我为您深入分析某个具体方面吗？我可以提供更详细的诊断方案。'
+                        content: '我是您的专属运维专家，根据您描述的问题，我建议从以下几个维度进行排查：\n1. 服务器负载情况（CPU、内存、磁盘IO）\n2. 网络连接状态（网络延迟、丢包率）\n3. 系统日志分析（Error级别日志、异常堆栈）\n\n需要我为您深入分析某个具体方面吗？我可以提供更详细的诊断方案。'
                     });
                     this.sending = false;
                     this.userInput = '';

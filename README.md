@@ -7,6 +7,7 @@
 
 ZSGuardian ---AI赋能，新一代研发管理守护平台。
 
+演示视屏： (https://www.bilibili.com/video/BV1wc3izUEd1/)
 
 ## 项目文档
 
